@@ -1,0 +1,268 @@
+{
+  "stage": "run",
+  "payload": {
+    "case_id": "D-02",
+    "phase": "run",
+    "data": {
+      "documents": [
+        {
+          "id": "doc_a",
+          "title": "",
+          "text": ""
+        },
+        {
+          "id": "doc_b",
+          "title": "alpha",
+          "text": "alpha alpha"
+        },
+        {
+          "id": "doc_c",
+          "title": "beta",
+          "text": "beta"
+        }
+      ],
+      "dev_queries": [
+        {
+          "id": "dev_1",
+          "text": "alpha",
+          "group": "topic",
+          "relevant": [
+            "doc_b"
+          ]
+        },
+        {
+          "id": "dev_2",
+          "text": "beta",
+          "group": "topic",
+          "relevant": [
+            "doc_c"
+          ]
+        },
+        {
+          "id": "dev_3",
+          "text": "alpha",
+          "group": "navigation",
+          "relevant": [
+            "doc_b"
+          ]
+        }
+      ],
+      "test_queries": [
+        {
+          "id": "query_1",
+          "text": "alpha alpha",
+          "group": "topic"
+        },
+        {
+          "id": "query_2",
+          "text": "unknown",
+          "group": "topic"
+        },
+        {
+          "id": "query_3",
+          "text": "",
+          "group": "navigation"
+        }
+      ]
+    },
+    "protocol": {
+      "aggregate_scope": "D-02 Recall@5 and MRR@10 are query means within each primary corpus, then arithmetic means across primary corpora. Throughput uses the first primary corpus and separate rank batches; do not confuse ordinary query means with group macro means used for selection.",
+      "case_id": "D-02",
+      "default_config": {
+        "b": 0.75,
+        "k1": 1.2,
+        "title_weight": 0.0
+      },
+      "difficulty": "medium",
+      "equivalence": "D-02 accepts the documented equivalent ranking representations and positive global score scaling that preserves required ordering. Development selection, group metrics and actual ranking provenance must still match method.md.",
+      "figure_caption": "\u672c\u8f6eCPU\u79bb\u7ebf\u5b9e\u9a8c\uff1b\u84dd\u8272\u4e3a\u57fa\u7ebf\u3001\u6a59\u8272\u4e3a\u5019\u9009\uff08\u5982\u6709\uff09\u3002\u56fe\u8868\u53ea\u5c55\u793a\u4e0a\u6e38\u63d0\u4f9b\u7684\u5b9e\u6d4b\u7cfb\u5217\uff1b\u6761\u4ef6\u68c0\u67e5\u548c\u6267\u884c\u8bb0\u5f55\u7531\u5e73\u53f0\u5f52\u6863\uff0c\u7b97\u6cd5details\u4e0e\u5f52\u6863\u660e\u7ec6\u4e0d\u662f\u540c\u4e00\u5bf9\u8c61\u3002",
+      "function": "run_experiment(request)",
+      "grid": [
+        {
+          "b": 0.0,
+          "k1": 0.4,
+          "title_weight": 0.0
+        },
+        {
+          "b": 0.0,
+          "k1": 0.4,
+          "title_weight": 0.5
+        },
+        {
+          "b": 0.0,
+          "k1": 0.4,
+          "title_weight": 2.0
+        },
+        {
+          "b": 0.5,
+          "k1": 0.4,
+          "title_weight": 0.0
+        },
+        {
+          "b": 0.5,
+          "k1": 0.4,
+          "title_weight": 0.5
+        },
+        {
+          "b": 0.5,
+          "k1": 0.4,
+          "title_weight": 2.0
+        },
+        {
+          "b": 1.0,
+          "k1": 0.4,
+          "title_weight": 0.0
+        },
+        {
+          "b": 1.0,
+          "k1": 0.4,
+          "title_weight": 0.5
+        },
+        {
+          "b": 1.0,
+          "k1": 0.4,
+          "title_weight": 2.0
+        },
+        {
+          "b": 0.0,
+          "k1": 1.2,
+          "title_weight": 0.0
+        },
+        {
+          "b": 0.0,
+          "k1": 1.2,
+          "title_weight": 0.5
+        },
+        {
+          "b": 0.0,
+          "k1": 1.2,
+          "title_weight": 2.0
+        },
+        {
+          "b": 0.5,
+          "k1": 1.2,
+          "title_weight": 0.0
+        },
+        {
+          "b": 0.5,
+          "k1": 1.2,
+          "title_weight": 0.5
+        },
+        {
+          "b": 0.5,
+          "k1": 1.2,
+          "title_weight": 2.0
+        },
+        {
+          "b": 1.0,
+          "k1": 1.2,
+          "title_weight": 0.0
+        },
+        {
+          "b": 1.0,
+          "k1": 1.2,
+          "title_weight": 0.5
+        },
+        {
+          "b": 1.0,
+          "k1": 1.2,
+          "title_weight": 2.0
+        },
+        {
+          "b": 0.0,
+          "k1": 2.0,
+          "title_weight": 0.0
+        },
+        {
+          "b": 0.0,
+          "k1": 2.0,
+          "title_weight": 0.5
+        },
+        {
+          "b": 0.0,
+          "k1": 2.0,
+          "title_weight": 2.0
+        },
+        {
+          "b": 0.5,
+          "k1": 2.0,
+          "title_weight": 0.0
+        },
+        {
+          "b": 0.5,
+          "k1": 2.0,
+          "title_weight": 0.5
+        },
+        {
+          "b": 0.5,
+          "k1": 2.0,
+          "title_weight": 2.0
+        },
+        {
+          "b": 1.0,
+          "k1": 2.0,
+          "title_weight": 0.0
+        },
+        {
+          "b": 1.0,
+          "k1": 2.0,
+          "title_weight": 0.5
+        },
+        {
+          "b": 1.0,
+          "k1": 2.0,
+          "title_weight": 2.0
+        }
+      ],
+      "group_selection": true,
+      "metrics": [
+        {
+          "name": "Recall@5",
+          "unit": "%"
+        },
+        {
+          "name": "MRR@10",
+          "unit": "\u5206\u6570"
+        },
+        {
+          "name": "\u67e5\u8be2\u541e\u5410",
+          "unit": "queries/s"
+        }
+      ],
+      "output_queries": "baseline/candidate contain test query rankings; details.search contains dev query rankings. Extra rankings for other supplied queries are accepted but not graded as test predictions.",
+      "output_scope": "INTERNAL D-02 algorithm API only. Run returns raw baseline/candidate rankings and selection details; rank returns candidate rankings using data.selected without retuning. These are not the final Reproduction JSON. The trusted framework computes final metrics and figures with withheld test relevance labels; do not invent metrics.",
+      "phase_values": [
+        "run",
+        "rank"
+      ],
+      "plot_labels": [
+        "RECALL@5 (%)",
+        "MRR@10 (SCORE)",
+        "THROUGHPUT (QUERIES/S)"
+      ],
+      "python": "3.9",
+      "request": {
+        "case_id": "string",
+        "data": "supplied instance",
+        "phase": "run or rank (exact literal values)",
+        "protocol": "this JSON"
+      },
+      "resources": {
+        "cpus": 1,
+        "memory_mib": 1024,
+        "stage_timeout_seconds": 20
+      },
+      "response_schema": "phase=run: baseline/candidate={query_id:[{id,score}...]}; details={selected:{k1,b,title_weight},search:[{config,rankings,recall_at_5_percent,mrr_at_10}]}. phase=rank: {candidate:test rankings} using data.selected, no tuning in rank phase. Every search row additionally contains group_metrics={groups:{group:{recall_at_5_percent,mrr_at_10}},worst_mrr_at_10,macro_mrr_at_10,macro_recall_at_5_percent}; selected includes title_weight.",
+      "return": "D-02 phase=run returns baseline, candidate and details; honest baseline-only output may use candidate=null and details={}. Phase=rank returns candidate rankings using data.selected, including when ranking with the default baseline configuration. Do not retune in rank phase.",
+      "runtime_scope": "D-02 throughput is measured externally from rank batches on the first primary corpus, using default and selected configurations separately. Three timing repeats are used; startup, I/O and ranking hash work are included. Rank uses data.selected without retuning. The whole Agent /solve limit remains 180 seconds.",
+      "scoring": "D-02: 40 total, pipeline 20 + data/figures 20. Baseline-only partial credit requires verified execution and applicable provenance/figure criteria; candidate=null alone is not a score guarantee. Rank consistency is also checked.",
+      "seed": 42,
+      "single_process": true,
+      "source_max_bytes": 65536,
+      "timing_calls": 30,
+      "timing_repeats": 3,
+      "version": "layered-d-v3",
+      "dev_ranking_representations": "query_id dictionary, complete array in dev query order, or [{query_id,rankings}]; rows are {id,score} or [id,score]. Ordinary query means and group macro means are distinct."
+    }
+  }
+}

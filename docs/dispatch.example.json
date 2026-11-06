@@ -1,0 +1,88 @@
+{
+  "schema_version": 3,
+  "dispatch_id": "d-example-11",
+  "team": "example-team",
+  "seed": 2,
+  "selection_mode": "random_a_fixed_bcde",
+  "cases_per_category": {
+    "A": 1,
+    "B": 3,
+    "C": 2,
+    "D": 3,
+    "E": 2
+  },
+  "rules_version": "",
+  "dispatch_policy_version": "",
+  "dispatch_policy_sha256": "",
+  "difficulty_by_case": {
+    "D-01": "easy",
+    "D-02": "medium",
+    "D-05": "hard"
+  },
+  "case_ids": [
+    "A-01",
+    "B-01",
+    "B-03",
+    "C-01",
+    "D-01",
+    "D-02",
+    "E-01"
+  ],
+  "cases": [
+    {
+      "case_id": "A-01",
+      "function": "",
+      "title": "",
+      "question_file": "",
+      "question_sha256": ""
+    },
+    {
+      "case_id": "B-01",
+      "function": "",
+      "title": "",
+      "question_file": "",
+      "question_sha256": ""
+    },
+  
+    {
+      "case_id": "B-03",
+      "function": "",
+      "title": "",
+      "question_file": "",
+      "question_sha256": ""
+    },
+    {
+      "case_id": "C-01",
+      "function": "",
+      "title": "",
+      "question_file": "",
+      "question_sha256": ""
+    },
+   
+    {
+      "case_id": "D-01",
+      "function": "",
+      "title": "",
+      "question_file": "",
+      "question_sha256": "",
+      "difficulty": ""
+    },
+    {
+      "case_id": "D-02",
+      "function": "",
+      "title": "",
+      "question_file": "",
+      "question_sha256": "",
+      "difficulty": ""
+    },
+   
+    {
+      "case_id": "E-01",
+      "function": "",
+      "title": "",
+      "question_file": "",
+      "question_sha256": ""
+    }
+  
+  ]
+}

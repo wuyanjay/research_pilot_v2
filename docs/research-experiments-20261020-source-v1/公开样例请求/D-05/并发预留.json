@@ -1,0 +1,94 @@
+{
+  "stage": "run",
+  "payload": {
+    "case_id": "D-05",
+    "phase": "run",
+    "data": {
+      "jobs": [
+        {
+          "id": "task_1",
+          "flow": "A",
+          "arrival_ms": 0,
+          "service_ms": 3,
+          "deadline_ms": 12
+        },
+        {
+          "id": "task_2",
+          "flow": "A",
+          "arrival_ms": 0,
+          "service_ms": 2,
+          "deadline_ms": 12
+        },
+        {
+          "id": "task_3",
+          "flow": "B",
+          "arrival_ms": 0,
+          "service_ms": 2,
+          "deadline_ms": 12
+        }
+      ],
+      "flow_weights": {
+        "A": 1,
+        "B": 2,
+        "ZERO": 1
+      },
+      "servers": 2,
+      "setup_ms": 0,
+      "horizon_ms": 12
+    },
+    "protocol": {
+      "difficulty": "hard",
+      "metrics": [
+        {
+          "name": "\u516c\u5e73\u6027 Jain \u6307\u6570",
+          "unit": "\u5206\u6570"
+        },
+        {
+          "name": "\u5f52\u4e00\u5316\u541e\u5410",
+          "unit": "%"
+        },
+        {
+          "name": "\u5e73\u5747\u7b49\u5f85\u65f6\u95f4",
+          "unit": "ms"
+        }
+      ],
+      "plot_labels": [
+        "WEIGHTED JAIN (SCORE)",
+        "USEFUL THROUGHPUT (%)",
+        "MEAN WAIT (MS)"
+      ],
+      "case_id": "D-05",
+      "version": "layered-d-v3",
+      "seed": 42,
+      "python": "3.9",
+      "single_process": true,
+      "function": "run_experiment(request)",
+      "request": {
+        "case_id": "string",
+        "phase": "run",
+        "data": "supplied instance",
+        "protocol": "this JSON"
+      },
+      "return": "object with baseline,candidate,details; candidate=null is allowed for an honest partial baseline run",
+      "resources": {
+        "cpus": 1,
+        "memory_mib": 1024,
+        "stage_timeout_seconds": 20
+      },
+      "source_max_bytes": 65536,
+      "figure_caption": "\u672c\u8f6eCPU\u79bb\u7ebf\u5b9e\u9a8c\uff1b\u84dd\u8272\u4e3a\u57fa\u7ebf\u3001\u6a59\u8272\u4e3a\u5019\u9009\uff08\u5982\u6709\uff09\u3002\u56fe\u8868\u53ea\u5c55\u793a\u4e0a\u6e38\u63d0\u4f9b\u7684\u5b9e\u6d4b\u7cfb\u5217\uff1b\u6761\u4ef6\u68c0\u67e5\u548c\u6267\u884c\u8bb0\u5f55\u7531\u5e73\u53f0\u5f52\u6863\uff0c\u7b97\u6cd5details\u4e0e\u5f52\u6863\u660e\u7ec6\u4e0d\u662f\u540c\u4e00\u5bf9\u8c61\u3002",
+      "scoring": "D-05: 40 total, pipeline 20 + data/figures 20. Verified baseline-only execution may retain partial credit; the 10-point baseline path also requires the applicable execution, provenance and figure criteria. candidate=null alone is not a score guarantee. Three primary conditions have equal partial credit; invalid conditions do not erase independently verified conditions.",
+      "runtime_scope": "D-05 service, setup, deadlines and waiting use simulated milliseconds. These are distinct from real process time; the per-stage limit is 20 seconds and the whole Agent /solve limit is 180 seconds.",
+      "equivalence": "D-05 must implement the documented FIFO and weighted-fair selection, server ordering, task conservation, timing and drop rules. Raw traces must come from request data; do not invent traces or metrics.",
+      "response_schema": "baseline=FIFO run,candidate=fair run|null; each run={trace:[job with server,dispatch_ms,setup_ms,start_ms,end_ms,wait_ms],served_ms:{all flows},dropped:[{id,reason}]}; details may be {}.",
+      "output_scope": "INTERNAL D-05 algorithm API only: return raw baseline and candidate traces with details, which may be {}. The trusted framework verifies scheduling behavior and computes final metrics and figures from actual traces. Platform condition measurements are archive details, not an extra final-answer field. Never invent traces or metrics.",
+      "aggregate_scope": "D-05 final metrics are arithmetic means of per-scenario values across all required primary conditions, not pooled service counters. If required primary candidates are incomplete, final observed metrics remain null with status failed; verified partial conditions may retain credit.",
+      "primary_conditions": [
+        "basic: one server, no setup, generous deadlines",
+        "concurrent: two servers, no setup, generous deadlines",
+        "advanced: two servers, setup/deadlines/burst/window limits"
+      ],
+      "partial_credit": "Three primary conditions equally weighted for baseline, candidate execution, measurement, effect and protocol coverage. Invalid conditions score zero only for that condition. Reproducibility credit scales by primary candidate completion fraction. Final metrics require all primary candidates valid; otherwise null and failed, with per-condition measurements in platform experiment archive details, not the algorithm details object or an extra final-answer field."
+    }
+  }
+}

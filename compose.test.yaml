@@ -1,0 +1,45 @@
+# 本地打榜挂载：test_data 对应 /data，test_output 对应 /output。
+services:
+  research-pilot:
+    image: research-pilot-v2:test
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: none
+    platform: linux/amd64
+    working_dir: /app
+    command: ["python", "main.py"]
+    env_file:
+      - .env
+    environment:
+      RESEARCH_RESULT_ROOT: /output
+      RESEARCH_WORKSPACE_TEAM: JTI
+      DATA_PATH: /data
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      # 源码由构建后的镜像提供，测试数据按赛事路径挂载。
+      - type: bind
+        source: ./test_data
+        target: /data
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./test_output
+        target: /output
+        bind:
+          create_host_path: false
+      # 在可写 /output 中单独保护平台派发的输入，正式答案仍写在队伍目录根部。
+      - type: bind
+        source: ./test_output/data/JTI/dispatch.json
+        target: /output/data/JTI/dispatch.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./test_output/data/JTI/assigned
+        target: /output/data/JTI/assigned
+        read_only: true
+        bind:
+          create_host_path: false

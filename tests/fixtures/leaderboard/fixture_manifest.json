@@ -1,0 +1,87 @@
+{
+  "fixture_kind": "local_protocol_fixture",
+  "team": "JTI",
+  "mounts": {
+    "test_data": "/data",
+    "test_output": "/output"
+  },
+  "workspace_environment": {
+    "RESEARCH_RESULT_ROOT": "项目绝对路径/test_output",
+    "RESEARCH_WORKSPACE_TEAM": "JTI"
+  },
+  "dispatch_file": "test_output/data/JTI/dispatch.json",
+  "dispatch_policy_file": "tests/fixtures/leaderboard/dispatch_policy.json",
+  "input_fields": [
+    "case_id",
+    "function",
+    "title",
+    "input",
+    "materials",
+    "constraints",
+    "expected_output",
+    "output_schema_ref"
+  ],
+  "sources": {
+    "A-01": {
+      "source": "docs/research-agent-spec (3).md",
+      "source_case_id": "A-99",
+      "adaptation": "仅将文档示例题号映射为本地派题题号；同类多个题号复用同一示例内容。"
+    },
+    "B-01": {
+      "source": "docs/research-agent-spec (3).md",
+      "source_case_id": "B-99",
+      "adaptation": "仅将文档示例题号映射为本地派题题号；同类多个题号复用同一示例内容。"
+    },
+    "B-02": {
+      "source": "docs/research-agent-spec (3).md",
+      "source_case_id": "B-99",
+      "adaptation": "仅将文档示例题号映射为本地派题题号；同类多个题号复用同一示例内容。"
+    },
+    "B-03": {
+      "source": "docs/research-agent-spec (3).md",
+      "source_case_id": "B-99",
+      "adaptation": "仅将文档示例题号映射为本地派题题号；同类多个题号复用同一示例内容。"
+    },
+    "C-01": {
+      "source": "docs/research-agent-spec (3).md",
+      "source_case_id": "C-99",
+      "adaptation": "仅将文档示例题号映射为本地派题题号；同类多个题号复用同一示例内容。"
+    },
+    "C-03": {
+      "source": "docs/research-agent-spec (3).md",
+      "source_case_id": "C-99",
+      "adaptation": "仅将文档示例题号映射为本地派题题号；同类多个题号复用同一示例内容。"
+    },
+    "D-01": {
+      "source": "docs/research-experiments-20261020-source-v1/D-01/",
+      "adaptation": "依据公开 method/protocol 组织本地八字段题目，不是平台正式 assigned 文件。"
+    },
+    "D-02": {
+      "source": "docs/research-experiments-20261020-source-v1/D-02/",
+      "adaptation": "依据公开 method/protocol 组织本地八字段题目，不是平台正式 assigned 文件。"
+    },
+    "D-05": {
+      "source": "docs/research-experiments-20261020-source-v1/D-05/",
+      "adaptation": "依据公开 method/protocol 组织本地八字段题目，不是平台正式 assigned 文件。"
+    },
+    "E-01": {
+      "source": "docs/research-agent-spec (3).md",
+      "source_case_id": "E-99",
+      "adaptation": "仅将文档示例题号映射为本地派题题号；同类多个题号复用同一示例内容。"
+    },
+    "E-02": {
+      "source": "docs/research-agent-spec (3).md",
+      "source_case_id": "E-99",
+      "adaptation": "仅将文档示例题号映射为本地派题题号；同类多个题号复用同一示例内容。"
+    }
+  },
+  "limitations": [
+    "所有 assigned 和 dispatch 均为本地联调样例，不是正式赛事派题或评分数据。",
+    "论文目录已添加 3 篇公开 PDF 用于工具测试，来源见 tests/fixtures/pdf/papers_manifest.json；这些样本不是正式赛事材料，B/C/E 题目仍为输入派题样例。",
+    "D 类实验文件逐字节复制自本项目公开包；未提供私有测试、签名凭证或可替代线上服务的环境。",
+    "未预置正式答卷、报告或图片，运行后由业务 Agent 产生。",
+    "当前业务实现仅支持 A 类生成与交付，其他题型仍会明确报错。",
+    "compose.test.yaml 将 /data、dispatch.json 和 assigned 设置为只读，将其他 /output 路径设置为可写；宿主机仍可维护输入文件。"
+  ],
+  "container_configuration": "compose.test.yaml"
+}

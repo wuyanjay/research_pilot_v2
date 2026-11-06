@@ -1,0 +1,47 @@
+[
+  {
+    "filename": "2008_Surface_Urban_Heat_Islands_and_Urban_Characteristic_Factors.pdf",
+    "title": "Study of the Relationships between the Spatial Extent of Surface Urban Heat Islands and Urban Characteristic Factors Based on Landsat ETM+ Data",
+    "doi": "10.3390/s8117453",
+    "source_url": "https://mdpi-res.com/d_attachment/sensors/sensors-08-07453/article_deploy/sensors-08-07453.pdf",
+    "article_url": "https://doi.org/10.3390/s8117453",
+    "sha256": "d309da88e061f177a7b982c9b5bb960c9faad74f435d756d7efba1f4a184a1f1",
+    "bytes": 413793,
+    "status": "open_access_downloaded",
+    "download_date": "2026-11-05",
+    "supporting_information": false,
+    "purpose": "本地 PDF 工具测试材料，不是赛事正式材料或指定答案。",
+    "pages": 16,
+    "pdf_verified": true
+  },
+  {
+    "filename": "2020_Urban_Forest_and_Urban_Thermal_Environment_in_Seoul.pdf",
+    "title": "An Effect of Urban Forest on Urban Thermal Environment in Seoul, South Korea, Based on Landsat Imagery Analysis",
+    "doi": "10.3390/f11060630",
+    "source_url": "https://mdpi-res.com/d_attachment/forests/forests-11-00630/article_deploy/forests-11-00630.pdf",
+    "article_url": "https://doi.org/10.3390/f11060630",
+    "sha256": "1371b64a94853f5b055a864618d605f30eef86a504980c80b8e2f0f48ebc3164",
+    "bytes": 1554956,
+    "status": "open_access_downloaded",
+    "download_date": "2026-11-05",
+    "supporting_information": false,
+    "purpose": "本地 PDF 工具测试材料，不是赛事正式材料或指定答案。",
+    "pages": 17,
+    "pdf_verified": true
+  },
+  {
+    "filename": "2021_Land_Cover_Indices_for_Surface_Urban_Heat_Island_Detection.pdf",
+    "title": "The Use of Land Cover Indices for Rapid Surface Urban Heat Island Detection from Multi-Temporal Landsat Imageries",
+    "doi": "10.3390/ijgi10060416",
+    "source_url": "https://mdpi-res.com/d_attachment/ijgi/ijgi-10-00416/article_deploy/ijgi-10-00416.pdf",
+    "article_url": "https://doi.org/10.3390/ijgi10060416",
+    "sha256": "beebde9788243d5f19ca5926839cca132b17d9f097380501b96f3a8ead196bc6",
+    "bytes": 12873220,
+    "status": "open_access_downloaded",
+    "download_date": "2026-11-05",
+    "supporting_information": false,
+    "purpose": "本地 PDF 工具测试材料，不是赛事正式材料或指定答案。",
+    "pages": 20,
+    "pdf_verified": true
+  }
+]

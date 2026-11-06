@@ -1,0 +1,22 @@
+{
+  "case_id": "D-05",
+  "function": "Reproduction",
+  "title": "双服务端加权公平调度复现（困难）",
+  "input": "请按照 /data/experiments/D-05/method.md 和 protocol.json 复现规定方法，先使用公开 sample.json 理解算法输入输出，再按赛事要求在本题 Gateway 会话中生成完整的 run_experiment(request) 源码。本题最终答卷恰好包含三项指标：name=公平性 Jain 指数，unit=分数；name=归一化吞吐，unit=%；name=平均等待时间，unit=ms。正式实验通过平台挂载的 /data/experiments/run_experiment.py 执行。返回 case_id、status、metrics、figures；指标对象包含 name、unit、reference、observed、relative_error。指标和图表必须来自真实实验，不得把公开样例或文档中的数值当成正式实测结果。",
+  "materials": [
+    "/data/experiments/D-05/method.md",
+    "/data/experiments/D-05/protocol.json",
+    "/data/experiments/D-05/sample.json",
+    "/data/experiments/run_experiment.py"
+  ],
+  "constraints": [
+    "遵循本题 method.md 和 protocol.json，不自行改变实验规则",
+    "算法使用 Python 3.9、随机种子 42、单进程和离线运行环境",
+    "正式算法源码须来自本题当前 Gateway 模型回复",
+    "只有实际运行成功且结果可追溯时才能填写 completed",
+    "未获得可核验的实测值时使用 null，不编造指标或图片",
+    "图表放在 data/figure/JTI/，figures 只记录真实生成的图片"
+  ],
+  "expected_output": "返回 case_id、status、恰好三项 metrics 和 figures，保留平台客户端实际产物。",
+  "output_schema_ref": "Reproduction"
+}

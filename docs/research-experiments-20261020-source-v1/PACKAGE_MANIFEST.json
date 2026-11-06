@@ -1,0 +1,239 @@
+{
+  "document_revision": "20261020-source-v1",
+  "status": "published_release",
+  "scope": [
+    "D-01",
+    "D-02",
+    "D-05"
+  ],
+  "protocol_identity": "layered-d-v3",
+  "source_provenance_version": "d-model-source-v1",
+  "seed": 42,
+  "source_public_archive_sha256": "a5be116ad75d838cfeae34949016639f91a204dc31a1ea220618e3a5b90a2f4c",
+  "case_files_and_public_inputs_preserved": true,
+  "source_admission_is_new_requirement": true,
+  "original_algorithm_methods_and_parameters_changed": false,
+  "scoring_formulas_changed": false,
+  "root_client_matches_deployed_source_client": true,
+  "files": {
+    "Agent适配与源码来源要求.md": {
+      "sha256": "b194560463419a01bf1fe5b89e060adf89ac9376e19bec38edd453c5858af450",
+      "bytes": 5896
+    },
+    "D-01/artifacts.py": {
+      "sha256": "a1356f56b78f67dec74f052770b2dea56ee2a92b995988170363ba55db90c9b3",
+      "bytes": 3978
+    },
+    "D-01/experiment.agent.json": {
+      "sha256": "44b4dfa69d6555b9521e70a29188df4582320bb7311e468dbd660a8a60c245fe",
+      "bytes": 166
+    },
+    "D-01/experiment.py": {
+      "sha256": "6e3830ac54923873541111d8328563c008bb8344ea83845a5b6b597e38c94dca",
+      "bytes": 469
+    },
+    "D-01/font.py": {
+      "sha256": "667c81973c1ebf2f96d14b30423bb764518341c23f19efe34215bc10b4611782",
+      "bytes": 2053
+    },
+    "D-01/implementation.py": {
+      "sha256": "3b2188faa77c4fbdbf0346dfe7757c013cd62dec11bcd2a0dd3994457e071537",
+      "bytes": 108
+    },
+    "D-01/manifest.json": {
+      "sha256": "a7059f6e5feb4de921b7d94109b44b0fe46d581c64101b30b3061d6b1d75dd90",
+      "bytes": 890
+    },
+    "D-01/method.md": {
+      "sha256": "ec0fb4012c7cf450ac3c4f887a3759d61b407875d2a57c9669dbd4690e85e369",
+      "bytes": 1112
+    },
+    "D-01/protocol.json": {
+      "sha256": "db47f63e721d1d8afcc94696cf3f55dc1effc46ee010a20b4acab5380721a27f",
+      "bytes": 4034
+    },
+    "D-01/sample.json": {
+      "sha256": "785095de78b08c5899a2ea77e639e5697abbfcbf2b75fd7f6d9d204985ee1d71",
+      "bytes": 2241
+    },
+    "D-01/worker.py": {
+      "sha256": "0ff2a5606a07501bdc1019046fe3f0c0b309bd245f6744da20c8675686d24403",
+      "bytes": 2790
+    },
+    "D-02/artifacts.py": {
+      "sha256": "a1356f56b78f67dec74f052770b2dea56ee2a92b995988170363ba55db90c9b3",
+      "bytes": 3978
+    },
+    "D-02/experiment.agent.json": {
+      "sha256": "f9f21f2dd9f21098c5dc95d03971345d2ea5726527becc2d9bc22f1a8589fea3",
+      "bytes": 166
+    },
+    "D-02/experiment.py": {
+      "sha256": "fb903c9da32e4e81623a1d05fbf7fccebf6dcb1f105daeb2887b8ac61ee05bf1",
+      "bytes": 469
+    },
+    "D-02/font.py": {
+      "sha256": "667c81973c1ebf2f96d14b30423bb764518341c23f19efe34215bc10b4611782",
+      "bytes": 2053
+    },
+    "D-02/implementation.py": {
+      "sha256": "3b2188faa77c4fbdbf0346dfe7757c013cd62dec11bcd2a0dd3994457e071537",
+      "bytes": 108
+    },
+    "D-02/manifest.json": {
+      "sha256": "6707672d669e43d7994aeb04a778e5ff346e2e3068d6d904c9240a35bc7d8dfa",
+      "bytes": 890
+    },
+    "D-02/method.md": {
+      "sha256": "86d56abd424be51cddbe43a1cd8ebddf05b2621622669e23c573cdb3afbf06ef",
+      "bytes": 2011
+    },
+    "D-02/protocol.json": {
+      "sha256": "a2d34db5bc7f4be1d67383d7ea9c485489f3f3d4819a4976c11908713acc9cfe",
+      "bytes": 5976
+    },
+    "D-02/sample.json": {
+      "sha256": "77d6816b8c434b3fe3dec60d486bdb2a7b284b3b60cb7fdf0e6423d2a9982cde",
+      "bytes": 3730
+    },
+    "D-02/worker.py": {
+      "sha256": "0ff2a5606a07501bdc1019046fe3f0c0b309bd245f6744da20c8675686d24403",
+      "bytes": 2790
+    },
+    "D-05/artifacts.py": {
+      "sha256": "a1356f56b78f67dec74f052770b2dea56ee2a92b995988170363ba55db90c9b3",
+      "bytes": 3978
+    },
+    "D-05/experiment.agent.json": {
+      "sha256": "410ed514ca3a5340c9f384392cff19a1f896b74bc20b86199c0f80b2cbcd84a4",
+      "bytes": 166
+    },
+    "D-05/experiment.py": {
+      "sha256": "3770e1276bcffc294cfdb23a9d539fc97600196d359721ea2ecfdfac9161af7c",
+      "bytes": 469
+    },
+    "D-05/font.py": {
+      "sha256": "667c81973c1ebf2f96d14b30423bb764518341c23f19efe34215bc10b4611782",
+      "bytes": 2053
+    },
+    "D-05/implementation.py": {
+      "sha256": "3b2188faa77c4fbdbf0346dfe7757c013cd62dec11bcd2a0dd3994457e071537",
+      "bytes": 108
+    },
+    "D-05/manifest.json": {
+      "sha256": "44c211b2dab0c1c03dd2ec6e4527694ed3276d90cd9e794626b6fef88f5a38ce",
+      "bytes": 890
+    },
+    "D-05/method.md": {
+      "sha256": "2f65b4e6377f5931b35ad513f2cd2fd1e26120efee2a1c3f65ed1482b1f7f7cf",
+      "bytes": 3126
+    },
+    "D-05/protocol.json": {
+      "sha256": "be9e991e5c950613fa0a566ce38bef00354c76d7a7419d4eb4a8a502ba990af5",
+      "bytes": 3556
+    },
+    "D-05/sample.json": {
+      "sha256": "334547c62b8fe63e498596af0b37d7358bf55e40bba11692f6513dc93b622395",
+      "bytes": 471
+    },
+    "D-05/worker.py": {
+      "sha256": "0ff2a5606a07501bdc1019046fe3f0c0b309bd245f6744da20c8675686d24403",
+      "bytes": 2790
+    },
+    "D类实验要求.md": {
+      "sha256": "ef1c1258bad1ee94bbcd8b163996616f0f68efc3344f5ac71fa95056224b4fe0",
+      "bytes": 4193
+    },
+    "D类数据与图表判分规则.md": {
+      "sha256": "ca7ff70a69cad4f6b0f2aa6a5f2337b2e01f42dc43ba33db06c9064d45aac498",
+      "bytes": 4369
+    },
+    "README.md": {
+      "sha256": "b5a3c08e4b671d7c3552e0cf301d0dbec2872fdcf07e13a5652ad7048b828862",
+      "bytes": 4686
+    },
+    "model_source.py": {
+      "sha256": "99a75084042ceea3a5fecef9411be2bad5b07756a80bc69ec3bb4d3ee0a6781c",
+      "bytes": 2616
+    },
+    "run_experiment.py": {
+      "sha256": "309aa2a34dadcb628997cab5580e9744d878d0665fb5cb8ae909b684d753d57d",
+      "bytes": 4153
+    },
+    "公开样例请求/D-01.json": {
+      "sha256": "03279d9c3c3aa19493a8ced4e4a24a1f5b56ec87bb6a348cb36c0402310381c2",
+      "bytes": 7056
+    },
+    "公开样例请求/D-01/不均衡-重复词-标点.json": {
+      "sha256": "e0d35396ea2190d39f244f38aa65d9eaf5eda4284d936aaa4b233df3d4dc952f",
+      "bytes": 5106
+    },
+    "公开样例请求/D-01/均衡-空文本-未知词.json": {
+      "sha256": "903c29a3b0aaff99e1c67d4c0918ae402ef7a676917c042d2bab90ab20388d89",
+      "bytes": 4934
+    },
+    "公开样例请求/D-02.json": {
+      "sha256": "4bdd498e693039dd35c3b6233db0f77edd03d0ec4fda22c5348092ef62c76b80",
+      "bytes": 10930
+    },
+    "公开样例请求/D-02/rank-default.json": {
+      "sha256": "69acb87696fddef7bbeb72588161448d31bcbe9948f54362e57c87d6c0c9d93d",
+      "bytes": 7921
+    },
+    "公开样例请求/D-02/空字段-重复未知词-不等组.json": {
+      "sha256": "9abeac8825dd27e4efa12b324e1be9051ffa718ec0843af94cf7829d137ee67d",
+      "bytes": 8351
+    },
+    "公开样例请求/D-05.json": {
+      "sha256": "a662823f75f929582675ec7d77e6aad50a1aeba738ca5ed9ccd19fae36f8c49d",
+      "bytes": 4637
+    },
+    "公开样例请求/D-05/并发预留.json": {
+      "sha256": "6ed49c6f8d77bda405d33ffb0f6231af998e8a7bcdc950bc654c9115d22e02cd",
+      "bytes": 4811
+    },
+    "公开样例请求/D-05/拒绝后同服务器重试.json": {
+      "sha256": "237689ce42290f395439da172e8caa7f654ff4cbea64d5a3e7a0a90240845351",
+      "bytes": 4810
+    },
+    "公开样例请求/D-05/空任务与零服务流.json": {
+      "sha256": "727be93a8ab074b516a0d4a4f5ec4b47cbb46ef456c077734bbbce1f5f662792",
+      "bytes": 4327
+    },
+    "公开样例请求/D-05/空闲间隔与流切换.json": {
+      "sha256": "2d06603f38ccc0f8e79c67ffa110c033d88ae666c731894abd634e99779e5233",
+      "bytes": 4652
+    },
+    "公开样例请求/D-05/窗口恰好与超窗.json": {
+      "sha256": "d8afd5a39752f3a5be93a88bacb2fe435584315b6e770e0968d59ec0f4da85d3",
+      "bytes": 4651
+    },
+    "公开样例请求/D-05/过期与同时到达.json": {
+      "sha256": "cc31b0f2144284875065a43b8355169c1ae81099ee355277e54cf7ab0a819bc1",
+      "bytes": 4651
+    },
+    "公开样例请求/README.md": {
+      "sha256": "0300bbae86c6849378dc3ecc0eafd2368efb9b3bb4af72697b6c2d728be114a2",
+      "bytes": 1836
+    },
+    "参赛流程与文档导航.md": {
+      "sha256": "f7f93b6297785628da36719b73467a694b2dbd641f5ae152cb1e05cd47f6d8fc",
+      "bytes": 3503
+    },
+    "报错对照与测试清单.md": {
+      "sha256": "2cbb41be4521bfaeff2ce8e0e83f0e005972bacc7492a4d959e1380fc9a6f5bf",
+      "bytes": 5004
+    },
+    "版本说明.md": {
+      "sha256": "276fb4a4ca6f709edcebfa636e428ef5d9c076a9a6da3d72d87dc97c955912b8",
+      "bytes": 2022
+    },
+    "离线自测与平台运行指南.md": {
+      "sha256": "64c67bb2bea9fa33aa5cbed6e2aa454a1786f52a8cd14d7253012bde2289b865",
+      "bytes": 12242
+    }
+  },
+  "release_date": "2026-10-20",
+  "download_filename": "research-experiments-20261020-source-v1.zip",
+  "source_local_archive_sha256": "6fab68bd4f24e4d947584ca54c8d83305d06dcd587c84e1e26ef239337ae903c"
+}

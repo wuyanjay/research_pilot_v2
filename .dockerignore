@@ -1,0 +1,13 @@
+# 只发送构建所需文件，排除凭据、测试挂载数据和镜像归档。
+**
+!Dockerfile
+!requirements.txt
+!main.py
+!src/
+!src/**
+!vendor/
+!vendor/**
+**/__pycache__/
+**/*.pyc
+**/.env
+**/.env.*

@@ -1,0 +1,51 @@
+{
+  "difficulty": "easy",
+  "epochs": 100,
+  "learning_rate": 0.8,
+  "penalty": 0.001,
+  "metrics": [
+    {
+      "name": "Macro-F1",
+      "unit": "分数"
+    },
+    {
+      "name": "Accuracy",
+      "unit": "%"
+    },
+    {
+      "name": "运行时间",
+      "unit": "秒"
+    }
+  ],
+  "plot_labels": [
+    "MACRO-F1 (SCORE)",
+    "ACCURACY (%)",
+    "RUNTIME (SECONDS)"
+  ],
+  "case_id": "D-01",
+  "version": "layered-d-v3",
+  "seed": 42,
+  "python": "3.9",
+  "single_process": true,
+  "function": "run_experiment(request)",
+  "request": {
+    "case_id": "string",
+    "phase": "run",
+    "data": "supplied instance",
+    "protocol": "this JSON"
+  },
+  "return": "D-01 internal algorithm output: object with baseline, candidate, details. An honest baseline-only run returns baseline predictions, candidate=null and details={}; this is not a completed target-method experiment or a score guarantee.",
+  "resources": {
+    "cpus": 1,
+    "memory_mib": 1024,
+    "stage_timeout_seconds": 20
+  },
+  "source_max_bytes": 65536,
+  "figure_caption": "本轮CPU离线真实运行；基线图汇总可核验的基线条件，候选图须全部主条件可核验；实验未全部完成时总指标为空。条件检查、原始输出及执行记录由平台归档，不要求选手写入算法返回的details。",
+  "scoring": "D-01: 40 total, pipeline 20 + data/figures 20. Verified baseline-only execution may retain real partial credit; the 10-point baseline path also requires the applicable execution, provenance and figure criteria. Empty or unverified output does not earn baseline credit. Do not report completed merely because the baseline succeeded.",
+  "runtime_scope": "D-01 runtime is the arithmetic mean of primary-condition host stage wall times, including startup and I/O. It is measured by the trusted framework, not a contestant-reported training-loop timer. The 20-second per-stage limit does not extend the 180-second whole-case Agent /solve limit.",
+  "equivalence": "D-01 permits numerically equivalent implementations of method.md; learned weights need not match reference weights element by element. The required training method, feature construction, class ordering and tie handling still apply. The reported actual model must reproduce the candidate predictions.",
+  "response_schema": "baseline=list[str] aligned with data.texts; candidate=list[str]|null in the same input order. Baseline-only: candidate=null and details={} are sufficient for the output interface; the baseline still needs independent verification. With candidate predictions: details must directly contain the actual model fields classes, vocabulary, idf, weights, not a nested model object. classes and vocabulary are lists ordered as method.md specifies. idf is either a list aligned with vocabulary or a token-to-value dictionary with the vocabulary keys. weights is a class-count x (vocabulary-size+1) matrix, with the last column corresponding to bias. Model values must be finite and the model must reproduce the candidate labels. These are raw algorithm results, not final metrics.",
+  "output_scope": "INTERNAL D-01 algorithm API only: return baseline, candidate, details. The algorithm details field describes the actual candidate model and may be {} for an honest baseline-only run. Platform condition checks, raw outputs and execution records belong to separate experiment archive details; contestants do not fabricate them. The trusted framework uses withheld labels to compute final metrics and figures. The final Reproduction answer contains only case_id, status, metrics, figures; do not add a top-level details field or invent metrics.",
+  "aggregate_scope": "D-01 final observed metrics are arithmetic means across the declared primary conditions. Compute each condition separately before aggregation; do not pool all predictions and recalculate one combined classification metric. Runtime is the mean full primary-stage host wall time measured by the trusted framework."
+}

@@ -1,0 +1,16 @@
+{
+  "case_id": "B-02",
+  "function": "Literature_Retrieval",
+  "title": "城市热岛：绿地与地表温度：文献检索",
+  "input": "从本地论文中检索研究城市绿地与地表温度关系的论文，重点关注遥感数据、绿地覆盖率和不同城市区域的温度差异。排除只讨论植物分类、没有分析城市温度的论文。",
+  "materials": [
+    "本地论文文件夹内的 PDF"
+  ],
+  "constraints": [
+    "只返回本地实际存在的 PDF",
+    "每篇论文提供唯一的完整 PDF 文件名和具体匹配理由",
+    "按与检索需求的相关性排序"
+  ],
+  "expected_output": "返回相关论文列表，每篇包含完整文件名和匹配理由。",
+  "output_schema_ref": "Literature_Retrieval"
+}

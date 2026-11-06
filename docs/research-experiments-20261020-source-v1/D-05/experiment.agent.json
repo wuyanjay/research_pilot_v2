@@ -1,0 +1,7 @@
+{
+  "case_id": "D-05",
+  "protocol_version": "layered-d-v3",
+  "implementation_required": true,
+  "algorithm_provided": false,
+  "entry": "run_experiment(request)"
+}

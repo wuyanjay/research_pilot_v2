@@ -1,0 +1,117 @@
+{
+  "schema_version": 3,
+  "dispatch_id": "local-test-v3-JTI-001",
+  "team": "JTI",
+  "seed": 2,
+  "selection_mode": "random_a_fixed_bcde",
+  "cases_per_category": {
+    "A": 1,
+    "B": 3,
+    "C": 2,
+    "D": 3,
+    "E": 2
+  },
+  "rules_version": "research-assistant-objective-v3",
+  "dispatch_policy_version": "research-assistant-dispatch-v3",
+  "dispatch_policy_sha256": "953b62aad621ea3811e4ad0348c4632b51dd908e1059fcd38f56276d4c6d019b",
+  "difficulty_by_case": {
+    "D-01": "easy",
+    "D-02": "medium",
+    "D-05": "hard"
+  },
+  "case_ids": [
+    "A-01",
+    "B-01",
+    "B-02",
+    "B-03",
+    "C-01",
+    "C-03",
+    "D-01",
+    "D-02",
+    "D-05",
+    "E-01",
+    "E-02"
+  ],
+  "cases": [
+    {
+      "case_id": "A-01",
+      "function": "Chat",
+      "title": "室内植物光照与生长：科研对话",
+      "question_file": "data/JTI/assigned/A-01.json",
+      "question_sha256": "865c56849041b18fde72d176b65254f2f41bf5c1d630e1187091eb3cbdd19e9c"
+    },
+    {
+      "case_id": "B-01",
+      "function": "Literature_Retrieval",
+      "title": "城市热岛：绿地与地表温度：文献检索",
+      "question_file": "data/JTI/assigned/B-01.json",
+      "question_sha256": "784592c44f61a10e5451d3eeac24da2011c354b6ab89b72082276bfe1a08dc15"
+    },
+    {
+      "case_id": "B-02",
+      "function": "Literature_Retrieval",
+      "title": "城市热岛：绿地与地表温度：文献检索",
+      "question_file": "data/JTI/assigned/B-02.json",
+      "question_sha256": "9137f97f23e4ace3ee0ae27cce19d3ce0736598a4e5b83ace8c1b2ce6a3d1f01"
+    },
+    {
+      "case_id": "B-03",
+      "function": "Literature_Retrieval",
+      "title": "城市热岛：绿地与地表温度：文献检索",
+      "question_file": "data/JTI/assigned/B-03.json",
+      "question_sha256": "d62eee051fd0746e514641e4428f8b334041c5a1c6b3b44996e63d6e8c3f3e2e"
+    },
+    {
+      "case_id": "C-01",
+      "function": "Survey",
+      "title": "电动汽车电池回收：回收工艺与生命周期评估综述",
+      "question_file": "data/JTI/assigned/C-01.json",
+      "question_sha256": "45478e5c93bb699b7d14af7c9cb4343c6e6b9f1ef1d3cbd8502e6a34f994c2ba"
+    },
+    {
+      "case_id": "C-03",
+      "function": "Survey",
+      "title": "电动汽车电池回收：回收工艺与生命周期评估综述",
+      "question_file": "data/JTI/assigned/C-03.json",
+      "question_sha256": "a3893ccac2ff77e149219c681e3a39625d02ab6657e13a01957e43c6abeca46a"
+    },
+    {
+      "case_id": "D-01",
+      "function": "Reproduction",
+      "title": "多条件文本分类复现（简单）",
+      "question_file": "data/JTI/assigned/D-01.json",
+      "question_sha256": "dcb1f9b6e83ba326989f7cef032b3a57ffc2dd8ed39ce8073b9703810d36c320",
+      "difficulty": "easy"
+    },
+    {
+      "case_id": "D-02",
+      "function": "Reproduction",
+      "title": "标题/正文检索与分组稳健选参（中等，v3）",
+      "question_file": "data/JTI/assigned/D-02.json",
+      "question_sha256": "3180f4a3c60d868ef1e3b0971326829777ce348c9409702d74cbd86594fc7ad8",
+      "difficulty": "medium"
+    },
+    {
+      "case_id": "D-05",
+      "function": "Reproduction",
+      "title": "双服务端加权公平调度复现（困难）",
+      "question_file": "data/JTI/assigned/D-05.json",
+      "question_sha256": "0bcf7ca2b7777b4cee7decc864759a7218158cc63660349bfa86fbed64b17337",
+      "difficulty": "hard"
+    },
+    {
+      "case_id": "E-01",
+      "function": "Idea",
+      "title": "城市树荫：热暴露与步行路线：研究灵感",
+      "question_file": "data/JTI/assigned/E-01.json",
+      "question_sha256": "3d59b3efc6ff04db06d5ccfaca8e137a3c8cc456068eca2a34cec615458a412e"
+    },
+    {
+      "case_id": "E-02",
+      "function": "Idea",
+      "title": "城市树荫：热暴露与步行路线：研究灵感",
+      "question_file": "data/JTI/assigned/E-02.json",
+      "question_sha256": "0d95b3e4167060b8a5d3d78a5043168408a78bc9d6aa92064f8edcd4dd97ad48"
+    }
+  ]
+}

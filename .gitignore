@@ -1,0 +1,30 @@
+# 本地配置与凭据；.env 不入库
+.env
+.env.*
+!.env.example
+
+# Python 缓存与虚拟环境
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# 本地运行产物；保留 dispatch.json 与 assigned/ 作为联调夹具
+test_output/data/JTI/work/
+test_output/data/JTI/*.json
+!test_output/data/JTI/dispatch.json
+test_output/data/expert/
+test_output/data/figure/
+*.log
+
+# 镜像归档与 OCI 导出文件
+images/
+index.json
+manifest.json
+*.tar
+*.tar.sha256
+
+# 系统与工具目录
+.DS_Store
+.claude/

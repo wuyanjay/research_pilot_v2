@@ -1,0 +1,86 @@
+{
+  "case_id": "D-01",
+  "phase": "run",
+  "data": {
+    "train": [
+      {
+        "text": "change analysis orbit planet irrigation analysis soil irrigation",
+        "label": "agriculture"
+      },
+      {
+        "text": "credit study study market report credit",
+        "label": "finance"
+      },
+      {
+        "text": "seed study harvest soil change system",
+        "label": "agriculture"
+      },
+      {
+        "text": "equity report system fund system bond",
+        "label": "finance"
+      },
+      {
+        "text": "bond analysis loan system report bond",
+        "label": "finance"
+      },
+      {
+        "text": "loan seed change loan crop report study fund",
+        "label": "finance"
+      },
+      {
+        "text": "change change new market loan loan",
+        "label": "finance"
+      },
+      {
+        "text": "change system bond credit report market",
+        "label": "finance"
+      },
+      {
+        "text": "study new seed seed analysis harvest",
+        "label": "agriculture"
+      },
+      {
+        "text": "telescope system cosmic study analysis planet",
+        "label": "astronomy"
+      },
+      {
+        "text": "planet new telescope change study star",
+        "label": "astronomy"
+      },
+      {
+        "text": "study study irrigation system soil harvest",
+        "label": "agriculture"
+      },
+      {
+        "text": "equity change bond new bond study",
+        "label": "finance"
+      },
+      {
+        "text": "telescope study new fund cosmic star market report",
+        "label": "astronomy"
+      },
+      {
+        "text": "report report study star galaxy orbit",
+        "label": "astronomy"
+      },
+      {
+        "text": "system market loan loan system change",
+        "label": "finance"
+      },
+      {
+        "text": "star analysis cosmic star report new",
+        "label": "astronomy"
+      },
+      {
+        "text": "seed system report analysis farm seed",
+        "label": "agriculture"
+      }
+    ],
+    "texts": [
+      "farm irrigation system report system system",
+      "irrigation farm system system study new orbit star",
+      "soil soil change analysis change analysis cosmic star",
+      "seed seed report system analysis report planet star"
+    ]
+  }
+}

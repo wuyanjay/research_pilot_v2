@@ -1,0 +1,25 @@
+{
+  "fixture_kind": "local_protocol_fixture",
+  "schema_version": 3,
+  "cases_per_category": {
+    "A": 1,
+    "B": 3,
+    "C": 2,
+    "D": 3,
+    "E": 2
+  },
+  "case_ids": [
+    "A-01",
+    "B-01",
+    "B-02",
+    "B-03",
+    "C-01",
+    "C-03",
+    "D-01",
+    "D-02",
+    "D-05",
+    "E-01",
+    "E-02"
+  ],
+  "description": "依据本项目 docs 创建的本地联调派题策略，不是赛事服务器签发的正式派题记录。"
+}

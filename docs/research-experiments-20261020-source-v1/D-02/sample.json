@@ -1,0 +1,80 @@
+{
+  "case_id": "D-02",
+  "phase": "run",
+  "data": {
+    "documents": [
+      {
+        "id": "r00",
+        "text": "engine storm signal signal signal copper storm river grain note appendix appendix note appendix general general general background background appendix appendix note general note note note background note background appendix background note general background note background appendix background general note general background note note note general note appendix note appendix background note background appendix note background note background note appendix background general background background note background note appendix note note appendix background note appendix note general background appendix note",
+        "title": ""
+      },
+      {
+        "id": "r01",
+        "text": "silver silver river copper",
+        "title": ""
+      },
+      {
+        "id": "r02",
+        "text": "copper grain signal storm signal forest general background general note background general appendix background appendix note background note appendix appendix general note general general general general general appendix background appendix note general note note background note",
+        "title": "river grain storm river"
+      },
+      {
+        "id": "r03",
+        "text": "river storm signal forest note background note background note note general background background appendix background general note background appendix background general appendix background note appendix note general background note general background background note background general general general general note appendix note note general background appendix appendix background background general note note appendix appendix background background background note general note general background note background note background appendix general note background appendix appendix general appendix general",
+        "title": "storm storm river silver"
+      },
+      {
+        "id": "r04",
+        "text": "river river engine engine engine signal engine forest note note note background appendix appendix note appendix background general background background appendix general note background background note background background background general general general note background appendix general background appendix",
+        "title": ""
+      },
+      {
+        "id": "r05",
+        "text": "grain river copper engine grain signal signal river grain river appendix appendix note general general general appendix note general general appendix general appendix general note background general general note general general general general note background note background note background note",
+        "title": ""
+      },
+      {
+        "id": "r06",
+        "text": "silver engine forest storm river background background note appendix appendix general note note",
+        "title": "copper forest forest signal grain engine signal"
+      },
+      {
+        "id": "r07",
+        "text": "river engine grain silver river copper silver storm",
+        "title": ""
+      }
+    ],
+    "dev_queries": [
+      {
+        "id": "q00",
+        "text": "UNKNOWN_979",
+        "relevant": [
+          "r00",
+          "r01"
+        ],
+        "group": "topic"
+      },
+      {
+        "id": "q01",
+        "text": "copper copper",
+        "relevant": [
+          "r06",
+          "r01"
+        ],
+        "group": "navigation"
+      }
+    ],
+    "test_queries": [
+      {
+        "id": "q02",
+        "text": "FOREST, river",
+        "group": "navigation"
+      },
+      {
+        "id": "q03",
+        "text": "signal",
+        "group": "topic"
+      }
+    ]
+  }
+}

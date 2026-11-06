@@ -1,0 +1,30 @@
+{
+  "case_id": "D-05",
+  "phase": "run",
+  "data": {
+    "jobs": [
+      {
+        "id": "a",
+        "flow": "A",
+        "arrival_ms": 0,
+        "service_ms": 2,
+        "deadline_ms": 10
+      },
+      {
+        "id": "b",
+        "flow": "B",
+        "arrival_ms": 2,
+        "service_ms": 2,
+        "deadline_ms": 3
+      }
+    ],
+    "flow_weights": {
+      "A": 1,
+      "B": 2,
+      "Z": 1
+    },
+    "servers": 1,
+    "setup_ms": 2,
+    "horizon_ms": 5
+  }
+}
