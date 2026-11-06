@@ -276,6 +276,26 @@ class PDFToolsTests(unittest.TestCase):
             "list_papers", "read_pdf_pages", "search_pdf_text",
         ])
 
+    def test_quick_meta_and_no_ocr_paths_do_not_trigger_ocr(self):
+        scan = self.papers / "scan_quick.pdf"
+        write_scanned_pdf(scan)
+        tools = PDFTools([scan.name], self.papers, self.cache)
+        with patch.object(pymupdf.Page, "get_textpage_ocr", side_effect=AssertionError("快速索引不能 OCR")):
+            meta = tools.quick_meta(scan)
+            self.assertEqual(meta["filename"], scan.name)
+            self.assertEqual(meta["snippet"], "")
+            result = tools.read_pdf_pages(scan, [1], ocr=False)
+            self.assertEqual(result["pages"][0]["method"], "none")
+            self.assertEqual(result["pages"][0]["text"], "")
+            self.assertEqual(tools.search_pdf_text([scan], ["urban"], ocr=False), [])
+        self.assertFalse(self.cache.exists())
+        with patch.object(pymupdf.Page, "get_textpage_ocr", autospec=True,
+                          side_effect=pymupdf.Page.get_textpage_ocr) as ocr:
+            result = tools.read_pdf_pages(scan, [1])
+        self.assertEqual(result["pages"][0]["method"], "ocr")
+        self.assertTrue(result["pages"][0]["text"])
+        self.assertEqual(ocr.call_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,7 +2,7 @@
 
 import os
 
-from openai import APIStatusError, APITimeoutError, AsyncOpenAI, OpenAIError
+from openai import APIConnectionError, APIStatusError, APITimeoutError, AsyncOpenAI, OpenAIError
 
 # 模型调用重试次数
 MAX_RETRIES = 3
@@ -56,6 +56,7 @@ class LLMClient:
             # 每次重试重新读取会话标识；不能用队名或 case_id 替代。
             session_id = os.getenv("CHALLENGE_SESSION_ID")
             parameters["extra_headers"] = {"X-Session-ID": session_id} if session_id else {}
+            status_code = None
             try:
                 # 延迟创建客户端以保留官方追踪；每次尝试结束后释放连接。
                 async with AsyncOpenAI(
@@ -67,9 +68,19 @@ class LLMClient:
                     response = await client.chat.completions.create(**parameters)
             except APITimeoutError:
                 error = "模型网关请求超时"
+            except APIConnectionError:
+                error = "模型网关连接失败"
             except APIStatusError as exc:
-                # HTTP 错误和其他请求错误仍立即报错，不回显上游正文。
-                raise LLMError("模型网关返回错误状态", status_code=exc.status_code) from None
+                # 408/409/425/429 和 5xx 属于瞬时错误，交给上层重试；其余立即报错。
+                status_code = exc.status_code
+                retryable = exc.status_code in (408, 409, 425, 429) or exc.status_code >= 500
+                if not retryable:
+                    raise LLMError(
+                        "模型网关返回错误状态",
+                        status_code=exc.status_code,
+                        retryable=False,
+                    ) from None
+                error = f"模型网关返回可重试错误状态 {exc.status_code}"
             except (OpenAIError, ValueError):
                 raise LLMError("模型网关调用失败，请检查连接与配置") from None
             else:
@@ -95,4 +106,4 @@ class LLMClient:
             
             # CancelledError 不被捕获，不触发重试；最终只报告最后一次失败。
             if attempt == max_retries:
-                raise LLMError(error, retryable=True) from None
+                raise LLMError(error, status_code=status_code, retryable=True) from None

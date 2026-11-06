@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import logging
 import os
 from pathlib import Path
 import re
@@ -14,6 +15,10 @@ OCR_LANGUAGE = "eng+chi_sim"
 OCR_DPI = 300
 DEFAULT_SEARCH_LIMIT = 20
 SNIPPET_CONTEXT_CHARS = 160
+# 快速索引只截取首页开头，够词法预筛和标题初筛使用即可。
+QUICK_SNIPPET_CHARS = 600
+
+logger = logging.getLogger(__name__)
 
 
 class PDFTools:
@@ -106,6 +111,30 @@ class PDFTools:
         """
         return [dict(paper) for paper in self._resolve_papers()]
 
+    def quick_meta(self, absolute_path: str | Path) -> dict:
+        """只读文件名、元数据标题和首页文字，不触发 OCR。"""
+        path = self._paper_path(absolute_path)
+        result = {
+            "filename": path.name,
+            "path": str(path),
+            "title": "",
+            "snippet": "",
+            "total_pages": 0,
+        }
+        try:
+            with pymupdf.open(path) as document:
+                if not document.is_pdf or document.needs_pass:
+                    return result
+                result["total_pages"] = document.page_count
+                metadata = document.metadata or {}
+                result["title"] = (metadata.get("title") or "").strip()
+                if document.page_count:
+                    result["snippet"] = document.load_page(0).get_text(sort=True).strip()[:QUICK_SNIPPET_CHARS]
+        except Exception as exc:
+            # 单篇损坏或加密不应拖垮整库预筛；后续仍可按文件名保留。
+            logger.warning("快速索引读取失败：%s（%s）", path.name, type(exc).__name__)
+        return result
+
     def _page_cache(self, path: Path) -> tuple[dict, Path | None]:
         information = path.stat()
         fingerprint = {
@@ -140,7 +169,7 @@ class PDFTools:
             if temporary_path is not None:
                 temporary_path.unlink(missing_ok=True)
 
-    def _read_pages(self, path: Path, pages: list[int] | None) -> dict:
+    def _read_pages(self, path: Path, pages: list[int] | None, *, ocr: bool = True) -> dict:
         cached, cache_path = self._page_cache(path)
         changed = False
         extracted = []
@@ -161,15 +190,20 @@ class PDFTools:
                     page = document.load_page(number - 1)
                     text = page.get_text(sort=True).strip()
                     method = "text"
-                    if not text:
+                    if not text and ocr:
                         # 只有文字层未提取到内容时才 OCR；语言数据是预训练文件。
                         textpage = page.get_textpage_ocr(
                             language=OCR_LANGUAGE, dpi=OCR_DPI, full=True, tessdata=self.tessdata,
                         )
                         text = page.get_text(textpage=textpage, sort=True).strip()
                         method = "ocr"
-                    cached["pages"][key] = {"page": number, "text": text, "method": method}
-                    changed = True
+                    if text or ocr:
+                        cached["pages"][key] = {"page": number, "text": text, "method": method}
+                        changed = True
+                    else:
+                        # 明确不允许 OCR 时不把空页写进共享缓存，避免影响后续摘要读取。
+                        extracted.append({"page": number, "text": "", "method": "none"})
+                        continue
                 # 返回副本，避免调用方修改内部缓存。
                 extracted.append(dict(cached["pages"][key]))
 
@@ -180,7 +214,13 @@ class PDFTools:
         }
 
     @tool(name="read_pdf_pages")
-    def read_pdf_pages(self, absolute_path: str | Path, pages: list[int] | None = None) -> dict:
+    def read_pdf_pages(
+        self,
+        absolute_path: str | Path,
+        pages: list[int] | None = None,
+        *,
+        ocr: bool = True,
+    ) -> dict:
         """输入：absolute_path 为本题 PDF 绝对路径；pages 为从 1 开始的页序号列表，
         省略或传入 None 时读取全文。例如：
         {
@@ -207,7 +247,7 @@ class PDFTools:
             ]
         }
         """
-        return self._read_pages(self._paper_path(absolute_path), pages)
+        return self._read_pages(self._paper_path(absolute_path), pages, ocr=ocr)
 
     @tool(name="search_pdf_text")
     def search_pdf_text(
@@ -215,6 +255,8 @@ class PDFTools:
         absolute_paths: list[str | Path],
         keywords: list[str],
         limit: int = DEFAULT_SEARCH_LIMIT,
+        *,
+        ocr: bool = True,
     ) -> list[dict]:
         """输入：absolute_paths 为 PDF 绝对路径列表；keywords 为检索关键词列表；
         limit 为最多返回的命中记录数，默认 20，不限制搜索页数。例如：
@@ -245,7 +287,7 @@ class PDFTools:
         hits = []
         for path in paths:
             # 复用内部读取，不重复记录嵌套工具；limit 不限制搜索页数。
-            document = self._read_pages(path, None)
+            document = self._read_pages(path, None, ocr=ocr)
             for page in document["pages"]:
                 intervals = []
                 matched_keywords = []

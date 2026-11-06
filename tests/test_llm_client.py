@@ -189,19 +189,30 @@ class LLMClientTests(unittest.IsolatedAsyncioTestCase):
             await LLMClient().complete(self.messages)
         self.assertEqual(len(self.requests), 4)
 
-    async def test_gateway_errors_are_sanitized_and_not_retried(self):
-        for status in (401, 429, 500):
+    async def test_gateway_errors_are_sanitized_and_classified(self):
+        for status in (401, 403, 422):
             with self.subTest(status=status):
                 self.requests.clear()
                 self.reply = lambda request: httpx.Response(status, json={"error": {"message": "secret-upstream-body"}})
                 with self.assertRaises(LLMError) as raised:
                     await LLMClient().complete(self.messages)
                 self.assertEqual(raised.exception.status_code, status)
+                self.assertFalse(raised.exception.retryable)
                 self.assertNotIn("secret-upstream-body", str(raised.exception))
                 self.assertIsNone(raised.exception.__cause__)
                 self.assertTrue(raised.exception.__suppress_context__)
                 self.assertEqual(len(self.requests), 1)
-        for exception_class, expected in ((httpx.ReadTimeout, "超时"), (httpx.ConnectError, "调用失败")):
+        for status in (429, 500):
+            with self.subTest(status=status):
+                self.requests.clear()
+                self.reply = lambda request: httpx.Response(status, json={"error": {"message": "secret-upstream-body"}})
+                with self.assertRaises(LLMError) as raised:
+                    await LLMClient().complete(self.messages)
+                self.assertEqual(raised.exception.status_code, status)
+                self.assertTrue(raised.exception.retryable)
+                self.assertNotIn("secret-upstream-body", str(raised.exception))
+                self.assertEqual(len(self.requests), 4)
+        for exception_class, expected in ((httpx.ReadTimeout, "超时"), (httpx.ConnectError, "连接失败")):
             with self.subTest(exception=exception_class.__name__):
                 self.requests.clear()
 
@@ -212,7 +223,8 @@ class LLMClientTests(unittest.IsolatedAsyncioTestCase):
                 with self.assertRaisesRegex(LLMError, expected) as raised:
                     await LLMClient().complete(self.messages)
                 self.assertNotIn("secret-transport-error", str(raised.exception))
-                self.assertEqual(len(self.requests), 4 if exception_class is httpx.ReadTimeout else 1)
+                self.assertTrue(raised.exception.retryable)
+                self.assertEqual(len(self.requests), 4)
         self.assertTrue(all(client.is_closed for client in self.http_clients))
 
     async def test_external_cancellation_propagates_and_closes_connection(self):

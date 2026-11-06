@@ -127,8 +127,9 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(handler.llm.calls), 3)
         for messages, options in handler.llm.calls:
             self.assertEqual(options["max_retries"], 0)
-            self.assertNotIn("timeout_s", options)
-            self.assertNotIn("max_tokens", options)
+            self.assertIn("timeout_s", options)
+            self.assertLessEqual(options["timeout_s"], 90)
+            self.assertEqual(options["max_tokens"], 4096)
             self.assertIn(self.question["input"], messages[1]["content"])
         screening_input = json.loads(handler.llm.calls[1][0][1]["content"].split("输入：\n", 1)[1])
         self.assertEqual(screening_input["papers"][0]["path"], str(self.papers / self.names[0]))
@@ -136,18 +137,17 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("正文", handler.llm.calls[2][0][1]["content"])
         self.assertEqual(len(list((self.root / "work/pdf_cache").glob("*.json"))), 2)
 
-    async def test_one_shared_retry_per_stage_for_invalid_outputs(self):
+    async def test_invalid_screening_record_is_repaired_instead_of_failing_stage(self):
         bad_screen = screening(self.names)
         bad_screen["papers"][0]["filename"] = "未授权.pdf"
         bad_rank = ranking(self.names)
         bad_rank["papers"][0]["reason"] = " "
-        handler = self.handler(["not json", criteria(), bad_screen, screening(self.names), bad_rank, ranking(self.names)])
+        handler = self.handler(["not json", criteria(), bad_screen, bad_rank])
         result = await handler.handle(self.question)
         self.assertEqual(len(result["papers"]), 2)
-        self.assertEqual(len(handler.llm.calls), 6)
-        for index in (1, 3, 5):
-            self.assertEqual(handler.llm.calls[index][0][-1]["role"], "user")
-            self.assertIn("上一份回复不合规", handler.llm.calls[index][0][-1]["content"])
+        self.assertEqual(len(handler.llm.calls), 4)
+        self.assertEqual(handler.llm.calls[1][0][-1]["role"], "user")
+        self.assertIn("上一份回复不合规", handler.llm.calls[1][0][-1]["content"])
 
     async def test_unverified_or_missing_evidence_does_not_block_delivery_result(self):
         screened = screening(self.names)
@@ -162,12 +162,17 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([paper["filename"] for paper in result["papers"]], self.names)
         self.assertTrue(all(set(paper) == {"filename", "reason"} for paper in result["papers"]))
 
-    async def test_screening_retry_is_shared_across_all_batches(self):
-        handler = self.handler([criteria(), {"papers": []}, screening(self.names[:1]), {"papers": []}])
+    async def test_screening_retry_is_independent_per_batch(self):
+        handler = self.handler([
+            criteria(),
+            {"papers": []}, screening(self.names[:1]),
+            {"papers": []}, screening(self.names[1:]),
+            ranking(self.names[::-1]),
+        ])
         with patch("src.handlers.retrieval.MAX_BATCH_PAPERS", 1):
-            with self.assertRaisesRegex(ValueError, "摘要初筛.*重试已用尽"):
-                await handler.handle(self.question)
-        self.assertEqual(len(handler.llm.calls), 4)
+            result = await handler.handle(self.question)
+        self.assertEqual(len(handler.llm.calls), 6)
+        self.assertEqual([paper["filename"] for paper in result["papers"]], self.names[::-1])
 
     async def test_successful_batch_is_not_replayed_when_next_batch_is_repaired(self):
         handler = self.handler([criteria(), screening(self.names[:1]), "bad json", screening(self.names[1:]), ranking(self.names[::-1])])
@@ -184,12 +189,17 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
             handler = self.handler([error, criteria(), screening(self.names), ranking(self.names)])
             self.assertEqual(len((await handler.handle(self.question))["papers"]), 2)
             self.assertEqual(len(handler.llm.calls), 4)
-        for error in (LLMError("状态错误", status_code=401), asyncio.CancelledError()):
-            handler = self.handler([error])
-            with self.assertRaises(type(error)) as raised:
-                await handler.handle(self.question)
-            self.assertIs(raised.exception, error)
-            self.assertEqual(len(handler.llm.calls), 1)
+
+        # 非重试错误不再打穿整题：判断依据用默认值，初筛失败批次降级为 pending。
+        handler = self.handler([LLMError("状态错误", status_code=401)] * 3)
+        result = await handler.handle(self.question)
+        self.assertEqual(result, {"case_id": "B-99", "papers": []})
+        self.assertEqual(len(handler.llm.calls), 3)
+
+        handler = self.handler([asyncio.CancelledError()])
+        with self.assertRaises(asyncio.CancelledError):
+            await handler.handle(self.question)
+        self.assertEqual(len(handler.llm.calls), 1)
 
     async def test_missing_papers_directory_is_not_retried_or_converted_to_empty_answer(self):
         handler = self.handler([criteria()])
@@ -230,11 +240,10 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
         (self.papers / name).unlink()
         write_pdf(self.papers / name, ["Cover", "Study purpose", "3. Results\n" + RESULT, "Discussion"])
         excluded = screening([name], "excluded", quote="Cover")
-        pending = screening([name], "pending", quote="Cover")
-        handler = self.handler([criteria(), excluded, pending, ranking([name])])
+        handler = self.handler([criteria(), excluded, ranking([name])])
         result = await handler.handle(question([name]))
         self.assertEqual(len(result["papers"]), 1)
-        self.assertEqual(len(handler.llm.calls), 4)
+        self.assertEqual(len(handler.llm.calls), 3)
         self.assertIn("not_found", handler.llm.calls[1][0][1]["content"])
 
     def test_abstract_scan_is_bounded_and_incomplete_content_is_not_fabricated(self):
@@ -280,15 +289,17 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
             batches, _ = handler._batches(self.question, criteria(), small)
         self.assertEqual([len(batch) for batch in batches], [8, 1])
 
-    async def test_no_keyword_hit_reads_real_text_and_does_not_preemptively_exclude(self):
+    async def test_no_keyword_hit_uses_abstract_pages_and_does_not_preemptively_exclude(self):
         screened = screening(self.names)
         for record in screened["papers"]:
             record["questions"][0]["keywords"] = ["no-such-word"]
-        handler = self.handler([criteria(), screened, ranking(self.names)])
+        empty_terms = criteria()
+        empty_terms["search_terms"] = {"zh": ["不存在词"], "en": ["no-such-word"]}
+        handler = self.handler([empty_terms, screened, ranking(self.names)])
         result = await handler.handle(self.question)
         self.assertEqual(len(result["papers"]), 2)
         final_input = json.loads(handler.llm.calls[2][0][1]["content"].split("输入：\n", 1)[1])
-        self.assertEqual([page["page"] for page in final_input["evidence"][0]["pages"]], [1, 2, 3, 4])
+        self.assertEqual([page["page"] for page in final_input["evidence"][0]["pages"]], [1])
 
     async def test_duplicate_search_pages_are_read_once_for_final_evidence(self):
         screened = screening(self.names)
@@ -312,11 +323,11 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
         result = await handler.handle(limited_question)
         self.assertEqual([item["filename"] for item in result["papers"]], self.names[1:])
 
-    async def test_exhausted_time_budget_does_not_start_another_request(self):
+    async def test_exhausted_time_budget_returns_empty_answer_without_starting_request(self):
         handler = self.handler([])
-        with patch("src.handlers.retrieval.time.monotonic", side_effect=[0, 600]):
-            with self.assertRaises(TimeoutError):
-                await handler.handle(self.question)
+        with patch("src.handlers.retrieval.time.monotonic", side_effect=[0] + [600] * 40):
+            result = await handler.handle(self.question)
+        self.assertEqual(result, {"case_id": "B-99", "papers": []})
         self.assertEqual(handler.llm.calls, [])
 
     async def test_body_read_failure_propagates_without_model_repair(self):
@@ -333,6 +344,98 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
         result = await handler.handle(self.question)
         self.assertEqual(result, {"case_id": "B-99", "papers": []})
         self.assertEqual(len(handler.llm.calls), 4)
+
+    async def test_screening_normalizes_rank_questions_and_filename(self):
+        reply = {"papers": [
+            {"filename": "/tmp/" + self.names[0], "rank": "1", "status": "Candidate",
+             "reason": "ok", "questions": []},
+            {"filename": self.names[1], "rank": 2.0, "status": "pending", "reason": ""},
+        ]}
+        handler = self.handler([criteria(), reply, ranking(self.names)])
+        result = await handler.handle(self.question)
+        self.assertEqual(len(result["papers"]), 2)
+        self.assertEqual(len(handler.llm.calls), 3)
+        screening_input = json.loads(handler.llm.calls[1][0][1]["content"].split("输入：\n", 1)[1])
+        self.assertEqual([paper["filename"] for paper in screening_input["papers"]], self.names)
+
+    async def test_large_library_is_funneled_before_abstract_reading(self):
+        class FakeTools:
+            def __init__(self, items):
+                self.items = items
+
+            def list_papers(self):
+                return [dict(item) for item in self.items]
+
+            def quick_meta(self, path):
+                return {
+                    "filename": Path(path).name, "path": path,
+                    "title": "urban green space study",
+                    "snippet": "urban green space and temperature", "total_pages": 1,
+                }
+
+            def search_pdf_text(self, paths, keywords, limit=20, *, ocr=True):
+                return []
+
+            def read_pdf_pages(self, path, pages=None, *, ocr=True):
+                return {
+                    "filename": Path(path).name, "path": path, "total_pages": 1,
+                    "pages": [{"page": 1, "text": "urban green space", "method": "text"}],
+                }
+
+        class DynamicLLM:
+            timeout_s = 900
+
+            def __init__(self):
+                self.calls = []
+
+            async def complete(self, messages, **options):
+                self.calls.append((deepcopy(messages), options))
+                content = messages[1]["content"]
+                if "整理检索判断依据" in content:
+                    return json.dumps(criteria(), ensure_ascii=False)
+                if "选出最可能与题目相关" in content:
+                    return json.dumps({"selected": list(range(1, 41))})
+                if "摘要初筛" in content:
+                    payload = json.loads(content.split("输入：\n", 1)[1])
+                    return json.dumps({"papers": [
+                        {"filename": paper["filename"], "rank": index + 1,
+                         "status": "candidate", "reason": "摘要匹配",
+                         "questions": [{"question": "正文是否覆盖主题？", "keywords": ["urban"]}]}
+                        for index, paper in enumerate(payload["papers"])
+                    ]}, ensure_ascii=False)
+                if "根据提供的正文" in content:
+                    payload = json.loads(content.split("输入：\n", 1)[1])
+                    return json.dumps({"papers": [
+                        {"filename": item["filename"], "include": True, "reason": "正文匹配"}
+                        for item in payload["evidence"]
+                    ]}, ensure_ascii=False)
+                raise AssertionError("unexpected prompt: " + content[:80])
+
+        items = [
+            {"filename": f"paper_{index:03d}.pdf", "path": f"/papers/paper_{index:03d}.pdf"}
+            for index in range(150)
+        ]
+        llm = DynamicLLM()
+        handler = RetrievalHandler(llm, papers_directory=self.papers,
+                                   work_directory=self.root / "work")
+        read_names = []
+
+        def fake_read_abstract(tools, paper, *, max_pages=6):
+            read_names.append(paper["filename"])
+            return {
+                **paper, "total_pages": 1, "abstract_status": "found", "front_matter": [],
+                "pages": [{"page": 1, "text": "urban green space and temperature", "method": "text"}],
+            }
+
+        with patch("src.handlers.retrieval.PDFTools", return_value=FakeTools(items)):
+            with patch("src.handlers.retrieval_prefilter.read_abstract", side_effect=fake_read_abstract):
+                result = await handler.handle(self.question)
+
+        self.assertEqual(len(read_names), 40)
+        self.assertEqual(len(llm.calls), 8)
+        title_payload = json.loads(llm.calls[1][0][1]["content"].split("输入：\n", 1)[1])
+        self.assertEqual(len(title_payload["papers"]), 80)
+        self.assertEqual(len(result["papers"]), 30)
 
 
 class RetrievalHTTPTests(unittest.TestCase):
@@ -390,7 +493,7 @@ class RetrievalHTTPTests(unittest.TestCase):
             ]})
             self.assertEqual(json.loads((directory / "B-99.json").read_bytes()), response.json())
             self.assertEqual(len(gateway_requests), 3)
-            self.assertEqual(gateway_timeouts, [137.0, 137.0, 137.0])
+            self.assertEqual(gateway_timeouts, [90.0, 90.0, 90.0])
             screening_input = json.loads(gateway_requests[1]["messages"][1]["content"].split("输入：\n", 1)[1])
             self.assertEqual({paper["path"] for paper in screening_input["papers"]}, {str(papers / name) for name in names})
             self.assertEqual((directory / "assigned/B-99.json").read_bytes(), raw)

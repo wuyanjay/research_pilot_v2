@@ -15,10 +15,10 @@ ABSTRACT_END = re.compile(
     r"(?:\d+(?:\.\d+)*[\s.)、]*)?(?:introduction\b|引言|绪论))"
 )
 
-def read_abstract(tools: PDFTools, paper: dict) -> dict:
+def read_abstract(tools: PDFTools, paper: dict, *, max_pages: int = MAX_ABSTRACT_PAGES) -> dict:
     document = tools.read_pdf_pages(paper["path"], [1])
     pages = document["pages"]
-    last = min(MAX_ABSTRACT_PAGES, document["total_pages"])
+    last = min(max(1, max_pages), max(1, document["total_pages"]))
     if last >= 2:
         pages.extend(tools.read_pdf_pages(paper["path"], [2])["pages"])
     while True:
