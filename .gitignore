@@ -28,3 +28,6 @@ manifest.json
 # 系统与工具目录
 .DS_Store
 .claude/
+
+# 赛事参考文档和队友代码保留在本地，不进入仓库
+docs/
