@@ -10,6 +10,7 @@ from agenthack import tool
 CHAT_FIELDS = {"case_id", "answer", "clarifying_question"}
 RETRIEVAL_FIELDS = {"case_id", "papers"}
 SURVEY_FIELDS = {"case_id", "path", "markdown"}
+IDEA_FIELDS = {"case_id", "path", "markdown"}
 
 
 class ResultDelivery:
@@ -36,6 +37,9 @@ class ResultDelivery:
         elif question["function"] == "Survey":
             fields = SURVEY_FIELDS
             error = "C 类答卷必须只包含 case_id、path 和 markdown"
+        elif question["function"] == "Idea":
+            fields = IDEA_FIELDS
+            error = "E 类答卷必须只包含 case_id、path 和 markdown"
         else:
             raise NotImplementedError("当前题型的正式交付尚未接入")
         
@@ -58,14 +62,23 @@ class ResultDelivery:
 
         # 写入前完成序列化，拒绝非 JSON 数值和无法编码为 UTF-8 的内容。
         content = json.dumps(result, ensure_ascii=False, allow_nan=False, indent=2).encode("utf-8")
-        if question["function"] == "Survey":
+        if question["function"] in ("Survey", "Idea"):
+            if not isinstance(result.get("path"), str) or not isinstance(result.get("markdown"), str):
+                raise ValueError("报告答卷的 path 和 markdown 必须是字符串")
             # 路径由题号和队名决定，只访问本队报告，不让模型指定写入位置。
-            expected = f"data/expert/{case_id}-综述-{self.team}.md"
+            if question["function"] == "Survey":
+                expected = f"data/expert/{case_id}-综述-{self.team}.md"
+                path_error = "C 类 Markdown 路径必须符合题号-综述-队伍名的固定规则"
+                link_error = "C 类报告不能通过符号链接写入其他位置"
+            else:
+                expected = f"data/expert/{case_id}-灵感Idea报告-{self.team}.md"
+                path_error = "E 类 Markdown 路径必须符合题号-灵感Idea报告-队伍名的固定规则"
+                link_error = "E 类报告不能通过符号链接写入其他位置"
             if result["path"] != expected:
-                raise ValueError("C 类 Markdown 路径必须符合题号-综述-队伍名的固定规则")
+                raise ValueError(path_error)
             report = self.workspace_root / expected
             if report.parent.resolve() != self.workspace_root / "data" / "expert" or report.is_symlink():
-                raise ValueError("C 类报告不能通过符号链接写入其他位置")
+                raise ValueError(link_error)
             markdown_content = result["markdown"].encode("utf-8")
             # 每个文件单独原子替换；Markdown 回读成功后才发布结果 JSON。
             self._write_markdown(report, markdown_content)

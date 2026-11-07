@@ -232,7 +232,7 @@ class DispatcherTests(unittest.TestCase):
                 asyncio.run(agent.solve(payload))
             mocked.assert_not_awaited()
         for function, handler in agent.handlers.items():
-            if function in ("Chat", "Literature_Retrieval", "Survey"):
+            if function in ("Chat", "Literature_Retrieval", "Survey", "Idea"):
                 continue
             with self.subTest(handler=type(handler).__name__), self.assertRaises(NotImplementedError):
                 asyncio.run(handler.handle(self.payload))

@@ -36,7 +36,12 @@ class ResearchPilotAgent(BaseAgent):
                 team=self.dispatcher.team,
             ),
             "Reproduction": ReproductionHandler(),
-            "Idea": IdeaHandler(),
+            "Idea": IdeaHandler(
+                self.llm,
+                papers_directory=papers_directory,
+                work_directory=work_directory,
+                team=self.dispatcher.team,
+            ),
         }
 
     async def solve(self, payload: dict) -> dict:

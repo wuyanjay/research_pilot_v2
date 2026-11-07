@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2860" viewBox="0 0 1400 2860">
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8.5" refY="3" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L0,6 L9,3 z" fill="#4a5568"/>
+  </marker>
+  <marker id="arrow-retry" markerWidth="10" markerHeight="10" refX="8.5" refY="3" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L0,6 L9,3 z" fill="#b7791f"/>
+  </marker>
+  <filter id="shadow" x="-8%" y="-8%" width="116%" height="116%">
+    <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.10"/>
+  </filter>
+</defs>
+<rect x="0" y="0" width="1400" height="2860" fill="#f7fafc"/>
+<text x="700.0" y="46" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="30" font-weight="bold" fill="#1a365d">E 类（Idea）解题流程图</text>
+<text x="700.0" y="76" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="16" fill="#4a5568">目标迁移链路：材料解析 → 证据选取 → 报告生成 → 校验/重试 → 正式交付</text>
+<text x="40" y="110" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="bold" fill="#2c5282">① 入口与材料</text>
+<line x1="40" y1="122" x2="40" y2="122" stroke="#2c5282" stroke-width="2"/>
+<line x1="150" y1="110" x2="1360" y2="110" stroke="#cbd5e0" stroke-width="1" stroke-dasharray="4 6"/>
+<text x="40" y="900" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="bold" fill="#2c5282">② 证据选取</text>
+<line x1="40" y1="912" x2="40" y2="912" stroke="#2c5282" stroke-width="2"/>
+<line x1="150" y1="900" x2="1360" y2="900" stroke="#cbd5e0" stroke-width="1" stroke-dasharray="4 6"/>
+<text x="40" y="1120" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="bold" fill="#2c5282">③ 生成与校验</text>
+<line x1="40" y1="1132" x2="40" y2="1132" stroke="#2c5282" stroke-width="2"/>
+<line x1="150" y1="1120" x2="1360" y2="1120" stroke="#cbd5e0" stroke-width="1" stroke-dasharray="4 6"/>
+<text x="40" y="1990" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="bold" fill="#2c5282">④ 交付</text>
+<line x1="40" y1="2002" x2="40" y2="2002" stroke="#2c5282" stroke-width="2"/>
+<line x1="150" y1="1990" x2="1360" y2="1990" stroke="#cbd5e0" stroke-width="1" stroke-dasharray="4 6"/>
+<rect x="350.0" y="89.0" width="420" height="62" rx="14" fill="#e8f1fb" stroke="#2b6cb0" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="126.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="bold" fill="#1a202c">POST /solve（E-01 / E-02）</text>
+<rect x="320.0" y="181.0" width="480" height="78" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="214.2" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">Dispatcher 核对</text>
+<text x="560" y="238.5" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">dispatch / assigned / SHA-256 / 八字段</text>
+<rect x="320.0" y="286.0" width="480" height="78" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="319.2" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">IdeaHandler 启动</text>
+<text x="560" y="343.5" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">整题预算 900 秒，预留交付时间</text>
+<rect x="320.0" y="391.0" width="480" height="78" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="424.2" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">解析 materials</text>
+<text x="560" y="448.5" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">只接受显式 PDF 路径 / 文件名</text>
+<polygon points="560,485.0 695.0,540 560,595.0 425.0,540" fill="#fff4d6" stroke="#b7791f" stroke-width="2.2" filter="url(#shadow)"/>
+<text x="560" y="546.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">材料可解析？</text>
+<rect x="320.0" y="621.0" width="480" height="78" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="654.1" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">PDFTools 读取正文</text>
+<text x="560" y="678.4" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">文字层优先，空白页 OCR 兜底</text>
+<polygon points="560,730.0 705.0,785 560,840.0 415.0,785" fill="#fff4d6" stroke="#b7791f" stroke-width="2.2" filter="url(#shadow)"/>
+<text x="560" y="791.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">每篇有可读正文？</text>
+<rect x="310.0" y="866.0" width="500" height="78" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="899.1" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">章节识别 + 相关性选段</text>
+<text x="560" y="923.4" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">约 40k 字符，保留真实 PDF 页码</text>
+<rect x="310.0" y="973.0" width="500" height="104" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="1007.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">构造提示词</text>
+<text x="560" y="1031.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">七部分标题 + 内容检查表</text>
+<text x="560" y="1055.6" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">编号论文摘录（含 [p.N]）</text>
+<rect x="310.0" y="1103.0" width="500" height="104" rx="14" fill="#e8f1fb" stroke="#2b6cb0" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="1137.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">调用模型</text>
+<text x="560" y="1161.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">max_tokens≈6000，temperature≈0.1</text>
+<text x="560" y="1185.6" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">超时受剩余预算约束</text>
+<rect x="310.0" y="1236.0" width="500" height="78" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="1269.1" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">clean_markdown</text>
+<text x="560" y="1293.4" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">解包围栏 / JSON；拒绝截断与空文本</text>
+<rect x="310.0" y="1338.0" width="500" height="104" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="1372.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">硬校验</text>
+<text x="560" y="1396.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">800–4500 字符、Markdown 标题</text>
+<text x="560" y="1420.6" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">引用编号与页码是否来自摘录</text>
+<polygon points="560,1465.0 695.0,1520 560,1575.0 425.0,1520" fill="#fff4d6" stroke="#b7791f" stroke-width="2.2" filter="url(#shadow)"/>
+<text x="560" y="1526.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">硬校验通过？</text>
+<rect x="310.0" y="1598.0" width="500" height="104" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="1632.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">内容检查</text>
+<text x="560" y="1656.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">七要素：缺失 → 警告</text>
+<text x="560" y="1680.6" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">证据边界：硬错误</text>
+<polygon points="560,1730.0 705.0,1785 560,1840.0 415.0,1785" fill="#fff4d6" stroke="#b7791f" stroke-width="2.2" filter="url(#shadow)"/>
+<text x="560" y="1791.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">硬内容错误？</text>
+<rect x="310.0" y="1871.0" width="500" height="78" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="1904.1" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">规范化引用</text>
+<text x="560" y="1928.4" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">组装 ## 参考文献（不计入 4500 字符）</text>
+<rect x="310.0" y="1973.0" width="500" height="104" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="2007.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">最终校验</text>
+<text x="560" y="2031.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">正文引用 ↔ 参考文献一一对应</text>
+<text x="560" y="2055.6" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">报告路径固定且合法</text>
+<rect x="330.0" y="2118.0" width="460" height="64" rx="14" fill="#e6f4ea" stroke="#2f855a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="2156.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="bold" fill="#1a202c">返回 {case_id, path, markdown}</text>
+<rect x="310.0" y="2208.0" width="500" height="104" rx="14" fill="#e6f4ea" stroke="#2f855a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="2242.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">交付：原子写 Markdown</text>
+<text x="560" y="2266.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">data/expert/E-xx-灵感Idea报告-team.md</text>
+<text x="560" y="2290.6" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">→ 回读确认</text>
+<rect x="310.0" y="2346.0" width="500" height="78" rx="14" fill="#e6f4ea" stroke="#2f855a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="2379.2" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">原子写结果 JSON</text>
+<text x="560" y="2403.5" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">data/team/E-xx.json → 回读确认</text>
+<polygon points="560,2460.0 705.0,2515 560,2570.0 415.0,2515" fill="#fff4d6" stroke="#b7791f" stroke-width="2.2" filter="url(#shadow)"/>
+<text x="560" y="2509.2" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">Markdown 与 JSON</text>
+<text x="560" y="2533.5" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">逐字一致？</text>
+<rect x="400.0" y="2619.0" width="320" height="62" rx="14" fill="#e6f4ea" stroke="#2f855a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560" y="2656.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="bold" fill="#1a202c">HTTP 200 返回答卷</text>
+<rect x="930.0" y="501.0" width="360" height="78" rx="14" fill="#fde8e8" stroke="#c53030" stroke-width="2" filter="url(#shadow)"/>
+<text x="1110" y="534.1" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#742a2a">材料错误</text>
+<text x="1110" y="558.4" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#742a2a">不扫描全库、不使用替代材料</text>
+<rect x="930.0" y="746.0" width="360" height="78" rx="14" fill="#fde8e8" stroke="#c53030" stroke-width="2" filter="url(#shadow)"/>
+<text x="1110" y="779.1" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#742a2a">材料缺失 / 不可读</text>
+<text x="1110" y="803.4" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#742a2a">不生成报告</text>
+<polygon points="1110,1460.0 1235.0,1520 1110,1580.0 985.0,1520" fill="#fffaf0" stroke="#b7791f" stroke-width="2.2" filter="url(#shadow)"/>
+<text x="1110" y="1526.3" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#1a202c">还有重试时间？</text>
+<rect x="930.0" y="1651.0" width="360" height="78" rx="14" fill="#fde8e8" stroke="#c53030" stroke-width="2" filter="url(#shadow)"/>
+<text x="1110" y="1684.1" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#742a2a">E 类失败</text>
+<text x="1110" y="1708.4" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#742a2a">HTTP 500，不伪造报告</text>
+<rect x="930.0" y="2476.0" width="360" height="78" rx="14" fill="#fde8e8" stroke="#c53030" stroke-width="2" filter="url(#shadow)"/>
+<text x="1110" y="2509.2" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#742a2a">交付失败</text>
+<text x="1110" y="2533.5" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="normal" fill="#742a2a">HTTP 500</text>
+<line x1="560" y1="151" x2="560" y2="181" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="259" x2="560" y2="286" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="364" x2="560" y2="391" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="469" x2="560" y2="485" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="595" x2="560" y2="621" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="699" x2="560" y2="730" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="840" x2="560" y2="866" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="944" x2="560" y2="973" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1077" x2="560" y2="1103" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1207" x2="560" y2="1236" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1314" x2="560" y2="1338" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1442" x2="560" y2="1465" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1575" x2="560" y2="1598" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1702" x2="560" y2="1730" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1840" x2="560" y2="1871" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1949" x2="560" y2="1973" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="2077" x2="560" y2="2118" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="2182" x2="560" y2="2208" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="2312" x2="560" y2="2346" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="2424" x2="560" y2="2460" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="2570" x2="560" y2="2619" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="576" y="613.0" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#2f855a">是</text>
+<text x="576" y="858.0" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#2f855a">是</text>
+<text x="576" y="1591.5" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#2f855a">是</text>
+<text x="576" y="1860.5" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#2f855a">否</text>
+<text x="576" y="2599.5" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#2f855a">是</text>
+<line x1="695" y1="540" x2="928" y2="540" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="812" y="530" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#4a5568">否</text>
+<line x1="705" y1="785" x2="928" y2="785" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="818" y="775" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#4a5568">否</text>
+<line x1="695" y1="1520" x2="983" y2="1520" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="840" y="1510" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#4a5568">否</text>
+<line x1="705" y1="2515" x2="928" y2="2515" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="818" y="2505" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#4a5568">否</text>
+<polyline points="705,1785 1060,1785 1060,1582" fill="none" stroke="#b7791f" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="885" y="1775" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#b7791f">是</text>
+<polyline points="1110,1460 1110,1155 808,1155" fill="none" stroke="#b7791f" stroke-width="2.2" marker-end="url(#arrow-retry)" stroke-dasharray="9 7"/>
+<text x="1110" y="1070" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#b7791f">有时间：带反馈重试</text>
+<line x1="1110" y1="1580" x2="1110" y2="1650" stroke="#c53030" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="1128" y="1620" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#c53030">否</text>
+<rect x="60" y="2705" width="1280" height="130" rx="10" fill="#edf2f7" stroke="#cbd5e0"/>
+<text x="82" y="2740" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" fill="#4a5568">说明：</text>
+<text x="82" y="2764" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" fill="#4a5568">• 虚线为带具体错误反馈的重试回路；重试仍受整题 900 秒预算约束。</text>
+<text x="82" y="2788" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" fill="#4a5568">• 红色节点为终止性失败：不生成替代报告、不伪造实验结论，按 0 分处理。</text>
+<text x="82" y="2812" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" fill="#4a5568">• E 类正文至少 800 字符；## 参考文献 之前的正文最多 4500 字符。</text>
+<text x="82" y="2836" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" fill="#4a5568">• 引用只认证据选取阶段实际提供的论文页码；模拟观察只能写成待验证现象。</text>
+</svg>

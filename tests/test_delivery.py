@@ -74,7 +74,7 @@ class DeliveryTests(unittest.TestCase):
         self.assertEqual(self.exporter.get_finished_spans(), ())
 
     def test_other_categories_are_not_silently_treated_as_chat(self):
-        for function in ("Reproduction", "Idea"):
+        for function in ("Reproduction",):
             with self.subTest(function=function), self.assertRaisesRegex(NotImplementedError, "正式交付尚未接入"):
                 self.delivery.deliver({"case_id": "B-01", "function": function}, {})
         self.assertFalse(self.directory.exists())
@@ -135,6 +135,33 @@ class DeliveryTests(unittest.TestCase):
         with self.assertRaises(UnicodeEncodeError):
             self.delivery.deliver({"case_id": "C-01", "function": "Survey"}, result)
         self.assertFalse((self.root / "data/expert").exists())
+
+    def idea_result(self):
+        return {
+            "case_id": "E-01",
+            "path": f"data/expert/E-01-灵感Idea报告-{self.team}.md",
+            "markdown": "# 正式报告\n\n正文引用 [1]。\n\n## 参考文献\n\n[1] 论文标题，paper.pdf\n",
+        }
+
+    def test_idea_writes_both_files_and_returns_original_dictionary(self):
+        result = self.idea_result()
+        returned = self.delivery.deliver({"case_id": "E-01", "function": "Idea"}, result)
+        self.assertIs(returned, result)
+        self.assertEqual(json.loads((self.directory / "E-01.json").read_bytes()), result)
+        self.assertEqual((self.root / result["path"]).read_text(encoding="utf-8"), result["markdown"])
+        self.assertEqual(
+            [span.attributes["tool_name"] for span in self.exporter.get_finished_spans()],
+            ["write_report_markdown", "write_result_json"],
+        )
+
+    def test_idea_cannot_choose_another_teams_report(self):
+        result = self.idea_result()
+        with self.assertRaisesRegex(ValueError, "固定规则"):
+            self.delivery.deliver(
+                {"case_id": "E-01", "function": "Idea"},
+                {**result, "path": "data/expert/E-01-灵感Idea报告-other.md"},
+            )
+        self.assertFalse((self.directory / "E-01.json").exists())
 
     def test_invalid_utf8_is_rejected_before_writing(self):
         with self.assertRaises(UnicodeEncodeError):

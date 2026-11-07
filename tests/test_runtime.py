@@ -223,7 +223,7 @@ class RuntimeTests(unittest.TestCase):
             self.assertIs(main(), self.runtime)
             self.assertIsInstance(runtime.call_args.args[0], ResearchPilotAgent)
         agent = ResearchPilotAgent()
-        stub_question = {**question(), "function": "Idea"}
+        stub_question = {**question(), "function": "Reproduction"}
         with patch.object(agent.dispatcher, "resolve", return_value=stub_question):
             with self.assertRaises(NotImplementedError):
                 asyncio.run(agent.solve(stub_question))

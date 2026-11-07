@@ -12,7 +12,7 @@ Agent 通过 HTTP `POST /solve` 接收平台派发的八字段题目，按题型
 | B 文献检索 | `Literature_Retrieval` | 已接入 |
 | C 文献综述 | `Survey` | 已接入 |
 | D 论文复现 | `Reproduction` | 占位实现 |
-| E 研究 Idea | `Idea` | 占位实现 |
+| E 研究 Idea | `Idea` | 已接入 |
 
 已实现的能力包括：核对 `dispatch.json` 与 `assigned/` 题目、校验题目 SHA-256、按题型处理、原子写入结果并回读、OpenTelemetry 追踪。
 
@@ -26,7 +26,7 @@ Agent 通过 HTTP `POST /solve` 接收平台派发的八字段题目，按题型
 │   ├── runtime.py           # FastAPI 路由、追踪与错误响应
 │   ├── dispatcher/          # 读取并核对派题记录
 │   ├── delivery/            # 正式答卷写入与回读
-│   ├── handlers/            # A/B/C 处理器及提示词
+│   ├── handlers/            # A/B/C/E 处理器及提示词
 │   ├── llm/                 # OpenAI-compatible 模型客户端
 │   └── tools/               # PDF 解析、检索与摘要定位
 ├── tests/                   # 离线单元测试与 HTTP 集成测试
@@ -108,7 +108,7 @@ curl -X POST http://127.0.0.1:8080/solve \
   --data @test_output/data/JTI/assigned/B-01.json
 ```
 
-正式结果会写入 `RESEARCH_RESULT_ROOT/data/<队伍名>/<case_id>.json`；C 类还会写入 `data/expert/<case_id>-综述-<队伍名>.md`。
+正式结果会写入 `RESEARCH_RESULT_ROOT/data/<队伍名>/<case_id>.json`；C 类还会写入 `data/expert/<case_id>-综述-<队伍名>.md`，E 类写入 `data/expert/<case_id>-灵感Idea报告-<队伍名>.md`。
 
 ## 测试
 
@@ -146,11 +146,12 @@ shasum -a 256 images/JTI-pilot-<日期+随机字符>.tar > images/JTI-pilot-<日
 
 ## 版本说明
 
-**v0.1.0**：当前项目代码快照。包含 A/B/C 三类处理器、派题核对、正式交付、模型客户端、PDF 工具和离线测试。
+**v0.1.0**：当前项目代码快照。包含 A/B/C/E 四类处理器、派题核对、正式交付、模型客户端、PDF 工具和离线测试。
 
 已知限制：
 
-- D/E 两类尚未实现；
+- D 类尚未实现；
+- E 类 `materials` 需提供显式 PDF 文件名或路径；纯描述不会扫描整个论文库，避免误用未授权材料；
 - B 类按论文库全库检索；已加入快速索引、词法/标题预筛、字段修复和失败降级，150+ 篇下的正式平台耗时仍需复测；
 - C-03 材料整理阶段存在模型请求超时风险。
 
