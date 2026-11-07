@@ -28,6 +28,9 @@ TASK_BUDGET_S = 500.0
 DELIVERY_RESERVE_S = 20.0
 # 摘要初筛阶段的时间上限；超出后把剩余批次标 pending，把时间留给正文核验和重排。
 SCREEN_BUDGET_S = 280.0
+# 候选摘要总字符超过阈值时，限制进入初筛的候选数，避免长摘要库把预算耗在初筛。
+SCREEN_LONG_INPUT_CHARS = 120_000
+SCREEN_LONG_CANDIDATES = 28
 # 单次模型请求的超时上限；实际值还要受客户端配置和剩余预算约束。
 MAX_REQUEST_TIMEOUT_S = 90.0
 # 单次回复的输出上限，避免网关默认值过小导致 JSON 截断。
@@ -563,6 +566,16 @@ class RetrievalHandler:
         ]
         return selected or candidates[:retrieval_prefilter.MAX_SCREEN_PAPERS]
 
+    def _cap_summaries(self, summaries):
+        total = sum(
+            len(page["text"])
+            for summary in summaries
+            for page in summary.get("front_matter", []) + summary.get("pages", [])
+        )
+        if total > SCREEN_LONG_INPUT_CHARS and len(summaries) > SCREEN_LONG_CANDIDATES:
+            return summaries[:SCREEN_LONG_CANDIDATES], summaries[SCREEN_LONG_CANDIDATES:], total
+        return summaries, [], total
+
     def _batches(self, question, criteria, papers):
         """按篇数和完整消息字符预算分组，返回 (batches, oversized)。
 
@@ -795,6 +808,14 @@ class RetrievalHandler:
         summaries = retrieval_prefilter.read_summaries(
             tools, candidates, deadline, retrieval_prefilter.MAX_ABSTRACT_PAGES,
         )
+        summaries, dropped, total_summary_chars = self._cap_summaries(summaries)
+        if dropped:
+            self._diag(question, {
+                "stage": "候选上限",
+                "total_chars": total_summary_chars,
+                "kept": len(summaries),
+                "dropped": [item["filename"] for item in dropped],
+            })
 
         batches, oversized = self._batches(question, criteria, summaries)
         records = [

@@ -291,6 +291,20 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(summary["pages"][0]["method"], "ocr")
         self.assertIn("vegetation", summary["pages"][0]["text"].lower())
 
+    def test_long_candidate_set_is_capped_before_screening(self):
+        handler = self.handler([])
+        summaries = [
+            {"filename": f"{index}.pdf", "front_matter": [],
+             "pages": [{"page": 1, "text": "x" * 5_000}]}
+            for index in range(40)
+        ]
+        kept, dropped, total = handler._cap_summaries(summaries)
+        self.assertGreater(total, 120_000)
+        self.assertEqual(len(kept), 28)
+        self.assertEqual(len(dropped), 12)
+        kept, dropped, _ = handler._cap_summaries(summaries[:10])
+        self.assertEqual((len(kept), dropped), (10, []))
+
     def test_batch_limits_include_prompts_and_oversized_paper_remains_pending(self):
         handler = self.handler([])
         papers = [{"filename": f"{index}.pdf", "path": f"/data/papers/{index}.pdf", "total_pages": 3,
