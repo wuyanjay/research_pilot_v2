@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 # 每个模型阶段每次尝试之外最多追加的重试次数；初筛按批次独立分配。
 MAX_STAGE_RETRIES = 1
 # 摘要初筛单批最多包含的论文篇数。
-MAX_BATCH_PAPERS = 8
+MAX_BATCH_PAPERS = 10
 # 单批初筛完整消息的字符预算，包含提示词、原题、判断依据和论文原文，不是 Token 数。
-MAX_BATCH_CHARS = 24_000
+MAX_BATCH_CHARS = 40_000
 # 在上述字符预算内为重试时的错误反馈预留的空间，不额外增加总预算。
 REPAIR_FEEDBACK_CHARS = 1_000
 
@@ -26,6 +26,8 @@ REPAIR_FEEDBACK_CHARS = 1_000
 TASK_BUDGET_S = 500.0
 # 从业务预算中为答卷序列化、正式落盘与回读预留的时间（秒）。
 DELIVERY_RESERVE_S = 20.0
+# 摘要初筛阶段的时间上限；超出后把剩余批次标 pending，把时间留给正文核验和重排。
+SCREEN_BUDGET_S = 280.0
 # 单次模型请求的超时上限；实际值还要受客户端配置和剩余预算约束。
 MAX_REQUEST_TIMEOUT_S = 90.0
 # 单次回复的输出上限，避免网关默认值过小导致 JSON 截断。
@@ -108,6 +110,32 @@ def _dump(value) -> str:
 
 def _text(value) -> bool:
     return isinstance(value, str) and bool(value.strip())
+
+
+def _parse_json_object(text: str) -> dict:
+    """模型回复可能带代码围栏或前后说明；只接受最终解析出的 JSON 对象。"""
+    if not isinstance(text, str) or not text.strip():
+        raise ValueError("模型回复为空，不是 JSON 对象")
+    raw = text.strip()
+    candidates = [raw]
+    if raw.startswith("```"):
+        lines = raw.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        candidates.append("\n".join(lines).strip())
+    start, end = raw.find("{"), raw.rfind("}")
+    if start != -1 and end > start:
+        candidates.append(raw[start:end + 1])
+    for candidate in candidates:
+        try:
+            data = json.loads(candidate)
+        except (ValueError, TypeError):
+            continue
+        if isinstance(data, dict):
+            return data
+    raise ValueError("模型回复不是完整 JSON 对象")
 
 
 def _string_list(value) -> list[str]:
@@ -300,8 +328,21 @@ def _pending_record(paper: dict, criteria: dict, reason: str, *, screened: bool 
 
 def _normalize_screening(data, batch: list[dict], criteria: dict) -> list[dict]:
     """初筛输出先修复再使用，不因为单个字段偏差丢掉整批。"""
-    if not isinstance(data, dict) or not isinstance(data.get("papers"), list) or not data["papers"]:
-        raise ValueError("初筛结果必须包含非空 papers 数组")
+    if not isinstance(data, dict) or not isinstance(data.get("papers"), list):
+        raise ValueError("初筛结果必须包含 papers 数组")
+    if not data["papers"]:
+        # 模型明确返回空数组时，视为本批无候选，不重试，也不进入正文核验。
+        return [
+            {
+                **paper,
+                "rank": index + 1,
+                "status": "excluded",
+                "reason": "模型初筛认为本批无候选",
+                "questions": [],
+                "screened": True,
+            }
+            for index, paper in enumerate(batch)
+        ]
 
     manifest = {item["filename"].casefold(): item for item in batch}
     seen = set()
@@ -454,7 +495,7 @@ class RetrievalHandler:
                     timeout_s=timeout_s,
                     max_tokens=MAX_OUTPUT_TOKENS,
                 )
-                return validate(json.loads(text))
+                return validate(_parse_json_object(text))
             except LLMTruncatedError:
                 error = "回复被截断，请精简内容并重新生成完整 JSON，不要续写旧回复"
             except LLMError as exc:
@@ -547,8 +588,9 @@ class RetrievalHandler:
         return batches, oversized
 
     async def _screen_batches(self, question, criteria, batches, records, deadline):
+        screening_deadline = min(deadline, time.monotonic() + SCREEN_BUDGET_S)
         for index, batch in enumerate(batches):
-            remaining = deadline - time.monotonic() - DELIVERY_RESERVE_S
+            remaining = screening_deadline - time.monotonic() - DELIVERY_RESERVE_S
             if remaining <= 0:
                 records.extend(
                     _pending_record(paper, criteria, "剩余预算不足，保留待正文核验")
@@ -563,7 +605,7 @@ class RetrievalHandler:
                     _messages(SCREEN_PROMPT, question, criteria=criteria, papers=batch),
                     lambda data: _normalize_screening(data, batch, criteria),
                     {"remaining": MAX_STAGE_RETRIES},
-                    deadline,
+                    screening_deadline,
                     remaining_calls,
                 )
             except (ValueError, LLMError, TimeoutError) as exc:

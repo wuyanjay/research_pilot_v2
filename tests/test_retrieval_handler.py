@@ -165,14 +165,33 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
     async def test_screening_retry_is_independent_per_batch(self):
         handler = self.handler([
             criteria(),
-            {"papers": []}, screening(self.names[:1]),
-            {"papers": []}, screening(self.names[1:]),
+            {"not_papers": []}, screening(self.names[:1]),
+            {"not_papers": []}, screening(self.names[1:]),
             ranking(self.names[::-1]),
         ])
         with patch("src.handlers.retrieval.MAX_BATCH_PAPERS", 1):
             result = await handler.handle(self.question)
         self.assertEqual(len(handler.llm.calls), 6)
         self.assertEqual([paper["filename"] for paper in result["papers"]], self.names[::-1])
+
+    async def test_empty_screening_batch_is_accepted_without_retry(self):
+        handler = self.handler([
+            criteria(),
+            {"papers": []},
+            screening(self.names[1:]),
+            ranking(self.names[1:]),
+        ])
+        with patch("src.handlers.retrieval.MAX_BATCH_PAPERS", 1):
+            result = await handler.handle(self.question)
+        self.assertEqual(len(handler.llm.calls), 4)
+        self.assertEqual([paper["filename"] for paper in result["papers"]], self.names[1:])
+
+    async def test_screening_json_code_fence_is_accepted(self):
+        fenced = "```json\n" + json.dumps(screening(self.names), ensure_ascii=False) + "\n```"
+        handler = self.handler([criteria(), fenced, ranking(self.names)])
+        result = await handler.handle(self.question)
+        self.assertEqual(len(handler.llm.calls), 3)
+        self.assertEqual(len(result["papers"]), 2)
 
     async def test_successful_batch_is_not_replayed_when_next_batch_is_repaired(self):
         handler = self.handler([criteria(), screening(self.names[:1]), "bad json", screening(self.names[1:]), ranking(self.names[::-1])])
@@ -277,17 +296,17 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
         papers = [{"filename": f"{index}.pdf", "path": f"/data/papers/{index}.pdf", "total_pages": 3,
                    "abstract_status": "found", "pages": [{"page": 1, "text": "x" * 10_000}]} for index in range(5)]
         batches, oversized = handler._batches(self.question, criteria(), papers)
-        self.assertEqual([len(batch) for batch in batches], [2, 2, 1])
+        self.assertEqual([len(batch) for batch in batches], [3, 2])
         self.assertEqual(oversized, [])
         for batch in batches:
             self.assertLessEqual(len(_dump(_messages(SCREEN_PROMPT, self.question, criteria=criteria(), papers=batch))) + REPAIR_FEEDBACK_CHARS, MAX_BATCH_CHARS)
-        papers[0]["pages"][0]["text"] = "x" * 30_000
+        papers[0]["pages"][0]["text"] = "x" * 50_000
         _, oversized = handler._batches(self.question, criteria(), papers)
         self.assertEqual([paper["filename"] for paper in oversized], ["0.pdf"])
-        small = [{**papers[1], "filename": f"{index}.pdf"} for index in range(9)]
+        small = [{**papers[1], "filename": f"{index}.pdf"} for index in range(11)]
         with patch("src.handlers.retrieval.MAX_BATCH_CHARS", 1_000_000):
             batches, _ = handler._batches(self.question, criteria(), small)
-        self.assertEqual([len(batch) for batch in batches], [8, 1])
+        self.assertEqual([len(batch) for batch in batches], [10, 1])
 
     async def test_no_keyword_hit_uses_abstract_pages_and_does_not_preemptively_exclude(self):
         screened = screening(self.names)
@@ -432,7 +451,7 @@ class RetrievalTests(unittest.IsolatedAsyncioTestCase):
                 result = await handler.handle(self.question)
 
         self.assertEqual(len(read_names), 40)
-        self.assertEqual(len(llm.calls), 8)
+        self.assertEqual(len(llm.calls), 7)
         title_payload = json.loads(llm.calls[1][0][1]["content"].split("输入：\n", 1)[1])
         self.assertEqual(len(title_payload["papers"]), 80)
         self.assertEqual(len(result["papers"]), 30)
@@ -493,7 +512,8 @@ class RetrievalHTTPTests(unittest.TestCase):
             ]})
             self.assertEqual(json.loads((directory / "B-99.json").read_bytes()), response.json())
             self.assertEqual(len(gateway_requests), 3)
-            self.assertEqual(gateway_timeouts, [90.0, 90.0, 90.0])
+            self.assertEqual(len(gateway_timeouts), 3)
+            self.assertTrue(all(0 < timeout <= 90 for timeout in gateway_timeouts))
             screening_input = json.loads(gateway_requests[1]["messages"][1]["content"].split("输入：\n", 1)[1])
             self.assertEqual({paper["path"] for paper in screening_input["papers"]}, {str(papers / name) for name in names})
             self.assertEqual((directory / "assigned/B-99.json").read_bytes(), raw)
