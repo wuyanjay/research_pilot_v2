@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2920" viewBox="0 0 1400 2920">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="8.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#4a5568"/></marker>
+<marker id="arrow-retry" markerWidth="10" markerHeight="10" refX="8.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b7791f"/></marker>
+<marker id="arrow-fail" markerWidth="10" markerHeight="10" refX="8.5" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#c53030"/></marker>
+<filter id="shadow" x="-8%" y="-8%" width="116%" height="116%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.10"/></filter>
+</defs>
+<rect x="0" y="0" width="1400" height="2920" fill="#f7fafc"/>
+<text x="700" y="46" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="30" font-weight="bold" fill="#1a365d">B 类（Literature_Retrieval）解题流程图</text>
+<text x="700" y="76" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="16" font-weight="normal" fill="#4a5568">当前 v2 最高分基线 bd441b2：判断依据 → 召回漏斗 → 摘要初筛 → 正文取证 / 重排 → 最终答卷</text>
+<text x="40" y="110" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="bold" fill="#2c5282">① 入口与判断依据</text>
+<line x1="150" y1="110" x2="1360" y2="110" stroke="#cbd5e0" stroke-width="1" stroke-dasharray="4 6"/>
+<rect x="320" y="140" width="480" height="60" rx="14" fill="#e8f1fb" stroke="#2b6cb0" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="176.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="bold" fill="#1a202c">POST /solve（B-01 / B-02 / B-03）</text>
+<rect x="320" y="222" width="480" height="72" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="251.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">Dispatcher 核对</text>
+<text x="560.0" y="277.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">dispatch / assigned / SHA-256 / 八字段</text>
+<rect x="320" y="316" width="480" height="72" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="345.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">LiteratureRetrievalHandler 启动</text>
+<text x="560.0" y="371.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">业务预算 500 秒 + 交付预留 20 秒（平台 540 秒）</text>
+<rect x="320" y="410" width="480" height="86" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="433.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">① 判断依据整理（CRITERIA_PROMPT）</text>
+<text x="560.0" y="459.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">研究目标 / 必要条件 / 重点方向 / 排除条件</text>
+<text x="560.0" y="485.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">数量要求 / 中英文定位术语</text>
+<polygon points="560,510.0 645.0,560 560,610.0 475.0,560" fill="#fff4d6" stroke="#b7791f" stroke-width="2.2" filter="url(#shadow)"/>
+<text x="560" y="566" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">依据整理成功？</text>
+<rect x="960" y="520" width="380" height="80" rx="14" fill="#fffaf0" stroke="#b7791f" stroke-width="2" filter="url(#shadow)"/>
+<text x="1150.0" y="553.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">失败：使用默认判断依据</text>
+<text x="1150.0" y="579.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">不阻断后续检索</text>
+<line x1="560" y1="200" x2="560" y2="222" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="294" x2="560" y2="316" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="388" x2="560" y2="410" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="496" x2="560" y2="510" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="610" x2="560" y2="650" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="645" y1="560" x2="958" y2="560" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="800" y="550" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#4a5568">否</text>
+<polyline points="960,600 960,630 800,630 800,650 640,650" fill="none" stroke="#b7791f" stroke-width="2.2" stroke-dasharray="8 6" marker-end="url(#arrow-retry)"/>
+<text x="880" y="625" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#b7791f">默认依据继续</text>
+<text x="40" y="620" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="bold" fill="#2c5282">② 召回漏斗</text>
+<line x1="150" y1="620" x2="1360" y2="620" stroke="#cbd5e0" stroke-width="1" stroke-dasharray="4 6"/>
+<rect x="320" y="650" width="480" height="72" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="679.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">全库 PDF 列表（B 类 materials 为范围描述）</text>
+<text x="560.0" y="705.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">无 PDF → 直接返回 {papers: []}</text>
+<rect x="320" y="746" width="480" height="90" rx="14" fill="#e8f1fb" stroke="#2b6cb0" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="771.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="bold" fill="#1a202c">② 轻量索引 build_index</text>
+<text x="560.0" y="797.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">quick_meta：文件名 / 标题 / 首页片段 120 字 / 页数</text>
+<text x="560.0" y="823.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">不 OCR；索引可跨题缓存</text>
+<rect x="320" y="858" width="480" height="90" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="883.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">③ 词法预筛 150 → 80</text>
+<text x="560.0" y="909.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">判断依据中的中英术语 × 文件名 / 标题 / 首页片段</text>
+<text x="560.0" y="935.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">有命中优先，不足用零分补足</text>
+<rect x="320" y="970" width="480" height="90" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="995.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">④ 标题初筛 80 → 40</text>
+<text x="560.0" y="1021.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">模型看 id / 文件名 / 标题 / 120 字片段</text>
+<text x="560.0" y="1047.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">候选 ≤40 自动跳过；失败取前 40</text>
+<rect x="320" y="1082" width="480" height="90" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="1107.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">⑤ 摘要读取（最多 40 篇）</text>
+<text x="560.0" y="1133.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">每篇前 2 页；单篇失败用首页片段兜底</text>
+<text x="560.0" y="1159.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">输出 front_matter / pages</text>
+<rect x="320" y="1194" width="480" height="90" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="1219.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">⑥ 长候选截断</text>
+<text x="560.0" y="1245.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">摘要总字符 &gt;120k 且候选 &gt;28 → 只留前 28</text>
+<text x="560.0" y="1271.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">其余丢弃并写诊断记录</text>
+<line x1="560" y1="722" x2="560" y2="746" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="836" x2="560" y2="858" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="948" x2="560" y2="970" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1060" x2="560" y2="1082" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1172" x2="560" y2="1194" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1284" x2="560" y2="1360" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="40" y="1330" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="bold" fill="#2c5282">③ 摘要初筛（分批）</text>
+<line x1="150" y1="1330" x2="1360" y2="1330" stroke="#cbd5e0" stroke-width="1" stroke-dasharray="4 6"/>
+<rect x="320" y="1360" width="480" height="72" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="1389.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">⑦ 摘要初筛分批</text>
+<text x="560.0" y="1415.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">每批 ≤10 篇 / 40k 字符；单篇超预算标 pending</text>
+<rect x="320" y="1452" width="480" height="110" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="1474.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">⑧ 逐批摘要初筛</text>
+<text x="560.0" y="1500.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">candidate / pending / excluded</text>
+<text x="560.0" y="1526.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">批内顺序 / 理由 / 核验问题</text>
+<text x="560.0" y="1552.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">预算 280 秒；失败 / 超时 → pending</text>
+<rect x="320" y="1576" width="480" height="90" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="1601.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">SCREEN_PROMPT 模型调用</text>
+<text x="560.0" y="1627.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">按同一套原题与判断依据逐篇判断</text>
+<text x="560.0" y="1653.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">只返回本批完整 JSON；空批不重试</text>
+<rect x="320" y="1676" width="480" height="90" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="1701.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">⑨ 结果规范化</text>
+<text x="560.0" y="1727.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">文件名 / id 映射、去重、状态与理由校验</text>
+<text x="560.0" y="1753.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">不合法记录重试 / 降级 pending</text>
+<polygon points="560,1780.0 645.0,1830 560,1880.0 475.0,1830" fill="#fff4d6" stroke="#b7791f" stroke-width="2.2" filter="url(#shadow)"/>
+<text x="560" y="1836" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">本批完成？</text>
+<rect x="960" y="1800" width="380" height="90" rx="14" fill="#fffaf0" stroke="#b7791f" stroke-width="2" filter="url(#shadow)"/>
+<text x="1150.0" y="1838.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">失败 / 超预算：pending</text>
+<text x="1150.0" y="1864.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">保留到正文核验</text>
+<line x1="560" y1="1432" x2="560" y2="1452" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1562" x2="560" y2="1576" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1666" x2="560" y2="1676" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1766" x2="560" y2="1780" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="1880" x2="560" y2="1915" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="645" y1="1830" x2="958" y2="1830" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="800" y="1820" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#4a5568">否</text>
+<polyline points="960,1890 960,1915 800,1915 640,1915" fill="none" stroke="#b7791f" stroke-width="2.2" stroke-dasharray="8 6" marker-end="url(#arrow-retry)"/>
+<text x="880" y="1905" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#b7791f">pending 继续</text>
+<text x="40" y="1895" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="bold" fill="#2c5282">④ 取证与重排</text>
+<line x1="150" y1="1895" x2="1360" y2="1895" stroke="#cbd5e0" stroke-width="1" stroke-dasharray="4 6"/>
+<rect x="320" y="1915" width="480" height="90" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="1940.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">⑩ 正文取证（最多 20 篇）</text>
+<text x="560.0" y="1966.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">按核验问题 / 术语检索正文；每篇最多 3 页 × 1500 字</text>
+<text x="560.0" y="1992.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">正文检索不 OCR；单篇失败跳过</text>
+<rect x="320" y="2017" width="480" height="90" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="2042.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">⑪ 正文核验与重排（RANK_PROMPT）</text>
+<text x="560.0" y="2068.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">输入：初筛记录 + 正文证据</text>
+<text x="560.0" y="2094.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">输出：纳入列表与顺序</text>
+<polygon points="560,2115.0 645.0,2165 560,2215.0 475.0,2165" fill="#fff4d6" stroke="#b7791f" stroke-width="2.2" filter="url(#shadow)"/>
+<text x="560" y="2171" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">重排成功？</text>
+<rect x="960" y="2120" width="380" height="90" rx="14" fill="#fffaf0" stroke="#b7791f" stroke-width="2" filter="url(#shadow)"/>
+<text x="1150.0" y="2158.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">重排失败：best effort</text>
+<text x="1150.0" y="2184.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">候选 / 待核验按批内顺序</text>
+<line x1="560" y1="2005" x2="560" y2="2017" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="2107" x2="560" y2="2115" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="2215" x2="560" y2="2260" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="645" y1="2165" x2="958" y2="2165" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="800" y="2155" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#4a5568">否</text>
+<polyline points="960,2210 960,2215 800,2215 640,2260" fill="none" stroke="#b7791f" stroke-width="2.2" stroke-dasharray="8 6" marker-end="url(#arrow-retry)"/>
+<text x="880" y="2205" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#b7791f">best effort 继续</text>
+<text x="40" y="2230" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="bold" fill="#2c5282">⑤ 最终交付</text>
+<line x1="150" y1="2230" x2="1360" y2="2230" stroke="#cbd5e0" stroke-width="1" stroke-dasharray="4 6"/>
+<rect x="320" y="2260" width="480" height="90" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="2285.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">⑫ 最终答卷</text>
+<text x="560.0" y="2311.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">重排结果 + 未重排候选</text>
+<text x="560.0" y="2337.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">最多 30 篇；输出 {case_id, papers}</text>
+<rect x="320" y="2362" width="480" height="90" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="2387.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">⑬ 原子写结果</text>
+<text x="560.0" y="2413.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">data/JTI/B-0x.json → 回读确认</text>
+<text x="560.0" y="2439.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">只写本队目录；失败不伪造结果</text>
+<polygon points="560,2470.0 645.0,2520 560,2570.0 475.0,2520" fill="#fff4d6" stroke="#b7791f" stroke-width="2.2" filter="url(#shadow)"/>
+<text x="560" y="2526" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">回读一致？</text>
+<rect x="960" y="2480" width="380" height="80" rx="14" fill="#fde8e8" stroke="#c53030" stroke-width="2" filter="url(#shadow)"/>
+<text x="1150.0" y="2513.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">交付失败 → HTTP 500</text>
+<text x="1150.0" y="2539.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="17" font-weight="normal" fill="#1a202c">不写无效答卷</text>
+<line x1="560" y1="2350" x2="560" y2="2362" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="2452" x2="560" y2="2470" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="560" y1="2570" x2="560" y2="2580" stroke="#4a5568" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="645" y1="2520" x2="958" y2="2520" stroke="#c53030" stroke-width="2.2" marker-end="url(#arrow-fail)"/>
+<text x="800" y="2510" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#c53030">否</text>
+<rect x="400" y="2580" width="320" height="62" rx="14" fill="#e6f4ea" stroke="#2f855a" stroke-width="2" filter="url(#shadow)"/>
+<text x="560.0" y="2617.0" text-anchor="middle" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="18" font-weight="bold" fill="#1a202c">HTTP 200 返回答卷</text>
+<rect x="60" y="2660" width="1280" height="230" rx="10" fill="#edf2f7" stroke="#cbd5e0"/>
+<text x="82" y="2695" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="bold" fill="#4a5568">说明：</text>
+<text x="82" y="2719" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="normal" fill="#4a5568">• 预算：平台 B 类 540 秒；业务 500 秒 + 交付预留 20 秒；摘要初筛 280 秒。</text>
+<text x="82" y="2743" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="normal" fill="#4a5568">• 漏斗：全库 → 80 → 40 → 摘要 2 页 → 28 → 初筛 → 正文 20 → 终答 30。</text>
+<text x="82" y="2767" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="normal" fill="#4a5568">• 降级：依据失败用默认；标题初筛失败取前 40；摘要失败用首页片段；初筛失败 / 超预算 pending；</text>
+<text x="82" y="2791" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="normal" fill="#4a5568">  正文失败跳过；重排失败 best effort；无结果空列表；交付失败 500。</text>
+<text x="82" y="2815" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="normal" fill="#4a5568">• 当前 v2 无 B-02 专属分支；docs/src 的 B-02 删除式复核是另一条参考实现，不在此图。</text>
+<text x="82" y="2839" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="normal" fill="#4a5568">• 评分：S = max(0, min(15, 15H/N - 0.75U))；H=命中，N=冻结相关数，U=误报。</text>
+<text x="82" y="2863" text-anchor="start" font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif" font-size="15" font-weight="normal" fill="#4a5568">• 对照：docs/src 参考实现（B-01 14.3 / B-03 12.8，B-02 0）；本图是当前 v2 基线 bd441b2。</text>
+</svg>

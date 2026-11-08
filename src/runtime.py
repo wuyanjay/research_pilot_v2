@@ -43,6 +43,18 @@ def sdk_traced(telemetry: Telemetry):
                     with task() as operation:
                         result = await route(*args, **kwargs)
                         operation.result(result)
+            except Exception as exc:
+                # 只记录题型、安全错误类型和截断后的业务信息，不回显请求正文、提示词或密钥。
+                case_id = payload.get("case_id") if isinstance(payload, dict) else None
+                message = str(exc).encode("utf-8", "backslashreplace").decode("utf-8")
+                logger.error(
+                    "solve failed case_id=%s function=%s error_type=%s detail=%s",
+                    case_id,
+                    task_type,
+                    type(exc).__name__,
+                    message[:2000],
+                )
+                raise
             finally:
                 # 不限制整题耗时；只有刷新等待有上限。同步导出线程可能稍后才结束。
                 # 普通刷新失败不覆盖答卷或原始异常；CancelledError 继续向外传播。

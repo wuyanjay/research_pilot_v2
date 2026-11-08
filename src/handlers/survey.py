@@ -56,6 +56,47 @@ MIN_REFERENCES = 5
 logger = logging.getLogger(__name__)
 
 
+class ModelStructureError(ValueError):
+    """模型结构可修复错误，携带本次已安全接受的记录。"""
+
+    def __init__(self, message, partial_records=None, field_paths=None):
+        super().__init__(message)
+        self.partial_records = list(partial_records or [])
+        self.field_paths = list(field_paths or [])
+
+
+class StageFailure(Exception):
+    """共享重试或预算用尽后的可恢复阶段失败。"""
+
+    def __init__(self, stage, reason, partial_records=None):
+        super().__init__(stage)
+        self.stage = stage
+        self.reason = reason
+        self.partial_records = list(partial_records or [])
+
+
+class StageBudgetError(StageFailure):
+    """阶段自身预算不足；不用于吞掉PDF/系统IO超时。"""
+
+
+def _merge_partial_record(old, new):
+    """合并同篇的部分结构记录，保留先前有效字段和列表项。"""
+    if old is None:
+        return dict(new)
+    merged = dict(old)
+    for key, value in new.items():
+        if isinstance(value, list):
+            existing = merged.setdefault(key, [])
+            if isinstance(existing, list):
+                for item in value:
+                    if item not in existing:
+                        existing.append(item)
+        elif value not in (None, ""):
+            if merged.get(key) in (None, ""):
+                merged[key] = value
+    return merged
+
+
 def _dump(value) -> str:
     return json.dumps(value, ensure_ascii=False)
 
@@ -120,20 +161,26 @@ def _check_outline(data):
 
 
 def _paper_records(data, papers):
-    """仅核对本批编号及覆盖，不判断论文事实是否正确。"""
+    """接受本批内唯一授权编号，拒绝歧义编号。"""
     if not isinstance(data, dict) or not isinstance(data.get("papers"), list):
-        raise ValueError("阶段结果须包含 papers 数组")
+        raise ModelStructureError("papers 数组缺失或格式错误")
     expected = {paper["paper_id"] for paper in papers}
-    seen = set()
+    counts = {}
+    issues = []
     for item in data["papers"]:
         if not isinstance(item, dict) or type(item.get("paper_id")) is not int:
-            raise ValueError("每篇结果须有程序提供的整数 paper_id")
-        if item["paper_id"] not in expected or item["paper_id"] in seen:
-            raise ValueError("论文编号不在本批内或重复")
-        seen.add(item["paper_id"])
-    if seen != expected:
-        raise ValueError("阶段结果须覆盖本批全部论文")
-    return data["papers"]
+            issues.append("papers[].paper_id")
+            continue
+        counts[item["paper_id"]] = counts.get(item["paper_id"], 0) + 1
+        if item["paper_id"] not in expected:
+            issues.append("papers[].paper_id")
+    duplicates = {paper_id for paper_id, count in counts.items() if count > 1}
+    issues.extend("papers[].paper_id" for _ in duplicates)
+    accepted = [item for item in data["papers"] if isinstance(item, dict)
+                and type(item.get("paper_id")) is int and item["paper_id"] in expected
+                and item["paper_id"] not in duplicates]
+    missing = expected - {item["paper_id"] for item in accepted}
+    return accepted, issues, sorted(missing)
 
 
 def _check_tasks(tasks, paper_ids=None):
@@ -148,70 +195,141 @@ def _check_tasks(tasks, paper_ids=None):
 
 
 def _check_overview(data, papers, outline):
-    records = _paper_records(data, papers)
+    records, id_issues, missing = _paper_records(data, papers)
     questions = {item["question_id"]: item for item in outline["reading_questions"]}
+    cleaned = []
+    issues = list(id_issues)
     for item in records:
-        if not _text(item.get("research_focus")):
-            raise ValueError("论文概览须说明研究定位")
-        known = item.get("known_information")
-        pending = item.get("reading_questions")
-        if not isinstance(known, list) or not isinstance(pending, list):
-            raise ValueError("论文概览须包含 known_information 和 reading_questions 数组")
+        known = item.get("known_information", [])
+        pending = item.get("reading_questions", [])
+        if "known_information" not in item:
+            issues.append(f"papers[{item['paper_id']}].known_information")
+        if "reading_questions" not in item:
+            issues.append(f"papers[{item['paper_id']}].reading_questions")
+        if not isinstance(known, list):
+            issues.append(f"papers[{item['paper_id']}].known_information")
+            known = []
+        if not isinstance(pending, list):
+            issues.append(f"papers[{item['paper_id']}].reading_questions")
+            pending = []
+        valid_known = []
         for information in known:
-            if (not isinstance(information, dict) or information.get("question_id") not in questions
+            if (not isinstance(information, dict) or not isinstance(information.get("question_id"), str)
+                    or information.get("question_id") not in questions
                     or not _text(information.get("information"))):
-                raise ValueError("已知信息须关联有效阅读问题编号并提供实际信息")
+                issues.append(f"papers[{item['paper_id']}].known_information[]")
+                continue
+            valid_known.append(information)
         merged = {}
         for task in pending:
-            if (not isinstance(task, dict) or task.get("question_id") not in questions
+            if (not isinstance(task, dict) or not isinstance(task.get("question_id"), str)
+                    or task.get("question_id") not in questions
                     or not _strings(task.get("keywords"), required=True)):
-                raise ValueError("阅读任务须使用程序提供的问题编号 question_id 和非空关键词数组")
+                issues.append(f"papers[{item['paper_id']}].reading_questions[]")
+                continue
             question = questions[task["question_id"]]
             record = merged.setdefault(task["question_id"], {
                 "question_id": task["question_id"], "question": question["question"], "keywords": [],
             })
             record["keywords"] = _unique_words(record["keywords"] + task["keywords"])
-        item["reading_questions"] = list(merged.values())
-    return records
+        focus = item.get("research_focus", "")
+        if not isinstance(focus, str) or ("research_focus" in item and not _text(focus)):
+            issues.append(f"papers[{item['paper_id']}].research_focus")
+            focus = ""
+        cleaned.append({"paper_id": item["paper_id"], "research_focus": focus,
+                        "known_information": valid_known, "reading_questions": list(merged.values())})
+    if issues or missing:
+        logger.warning("C 类结构校验 %s", _dump({"event": "record_validation", "field_paths": issues,
+                      "accepted": len(cleaned), "rejected": len(issues), "missing_ids": missing}))
+        raise ModelStructureError("概览记录有无效字段", cleaned,
+                                  issues + (["papers[].paper_id"] if missing else []))
+    return cleaned
 
 
 def _check_notes(data, papers, outline):
-    records = _paper_records(data, papers)
+    records, id_issues, missing = _paper_records(data, papers)
     sections = {item["section_id"] for item in outline["sections"]}
+    cleaned = []
+    issues = list(id_issues)
     for item in records:
-        if not _text(item.get("research_focus")):
-            raise ValueError("材料记录须说明研究问题、对象或场景")
+        record = {"paper_id": item["paper_id"], "research_focus": item.get("research_focus", "")}
         for name in ("methods", "conditions", "limitations", "gaps"):
-            if not _strings(item.get(name)):
-                raise ValueError(f"材料记录的 {name} 须为字符串数组，可为空")
-        if not isinstance(item.get("findings"), list):
-            raise ValueError("findings 须为数组，可为空并如实记录缺口")
-        for finding in item["findings"]:
+            value = item.get(name, [])
+            if name not in item:
+                issues.append(f"papers[{item['paper_id']}].{name}")
+            if not _strings(value):
+                issues.append(f"papers[{item['paper_id']}].{name}")
+                value = []
+            record[name] = value
+        findings = item.get("findings", [])
+        if "findings" not in item:
+            issues.append(f"papers[{item['paper_id']}].findings")
+        if not isinstance(findings, list):
+            issues.append(f"papers[{item['paper_id']}].findings")
+            findings = []
+        valid_findings = []
+        ignored_fields = []
+        for finding in findings:
             if (not isinstance(finding, dict) or not _text(finding.get("statement"))
                     or finding.get("kind") not in ("reported_result", "author_interpretation", "review_inference")):
-                raise ValueError("每项发现须有 statement 和有效 kind，区分论文结果、作者解释与综述推断")
+                issues.append(f"papers[{item['paper_id']}].findings[]")
+                continue
             if (not isinstance(finding.get("section_ids"), list)
                     or any(type(number) is not int or number not in sections for number in finding["section_ids"])):
-                raise ValueError(f"section_ids 只能填写提纲章节编号 {sorted(sections)}，不能填写 PDF 页码、论文内部章节号或 question_id")
-    return records
+                ignored_fields.append(f"papers[{item['paper_id']}].findings[].section_ids")
+                finding = {**finding, "section_ids": []}
+            valid_findings.append(finding)
+        record["findings"] = valid_findings
+        if ignored_fields:
+            record["_field_paths"] = ignored_fields
+        cleaned.append(record)
+    if issues or missing:
+        logger.warning("C 类结构校验 %s", _dump({"event": "record_validation", "field_paths": issues,
+                      "accepted": len(cleaned), "rejected": len(issues), "missing_ids": missing}))
+        raise ModelStructureError("材料记录有无效字段", cleaned,
+                                  issues + (["papers[].paper_id"] if missing else []))
+    return cleaned
 
 
 def _check_comparison(data, papers, supplement_allowed):
-    if not isinstance(data, dict) or not isinstance(data.get("sections"), list) or not data["sections"]:
-        raise ValueError("比较结果须提供非空的修订 sections")
+    if not isinstance(data, dict) or not isinstance(data.get("sections"), list):
+        raise ModelStructureError("比较结果须提供非空的修订 sections", field_paths=["sections"])
     allowed = {paper["paper_id"] for paper in papers}
+    sections = []
+    issues = []
     for section in data["sections"]:
         if (not isinstance(section, dict) or not _text(section.get("title"))
                 or not isinstance(section.get("points"), list) or not _strings(section.get("gaps"))):
-            raise ValueError("修订章节须包含标题、论述要点和缺口数组")
+            issues.append("sections[]")
+            continue
+        points = []
         for point in section["points"]:
             if (not isinstance(point, dict) or not _text(point.get("analysis"))
                     or not isinstance(point.get("paper_ids"), list)
                     or any(type(number) is not int or number not in allowed for number in point["paper_ids"])):
-                raise ValueError("比较要点须包含分析和有效来源编号")
-    tasks = _check_tasks(data.get("supplement_tasks", []), allowed)
+                issues.append("sections[].points[]")
+                continue
+            points.append(point)
+        sections.append({**section, "points": points})
+    if not sections:
+        raise ModelStructureError("比较结果没有可用章节", field_paths=["sections[]"])
+    if issues:
+        logger.warning("C 类结构校验 %s", _dump({"event": "record_validation", "field_paths": issues,
+                      "accepted": len(sections), "rejected": len(issues)}))
+    raw_tasks = data.get("supplement_tasks", []) if supplement_allowed else []
+    if not isinstance(raw_tasks, list):
+        logger.warning("C 类结构校验 %s", _dump({"event": "record_validation",
+                      "field_paths": ["supplement_tasks"], "accepted": 0, "rejected": 1}))
+        raw_tasks = []
+    tasks = []
+    for task in raw_tasks:
+        try:
+            tasks.extend(_check_tasks([task], allowed))
+        except ValueError:
+            logger.warning("C 类结构校验 %s", _dump({"event": "record_validation",
+                          "field_paths": ["supplement_tasks[]"], "accepted": len(tasks), "rejected": 1}))
     # 一轮补读之后只保留未解问题，不因模型再次提出任务而开启额外循环。
-    return {"sections": data["sections"], "supplement_tasks": tasks if supplement_allowed else []}
+    return {"sections": sections, "supplement_tasks": tasks if supplement_allowed else []}
 
 
 class SurveyHandler:
@@ -240,9 +358,10 @@ class SurveyHandler:
         recent = durations[-3:]
         return max(MIN_REQUEST_WINDOW_S, min(90.0, sum(recent) / len(recent)))
 
-    async def _request(self, stage, messages, validate, retries, deadline, remaining_calls, *, json_reply=True, limit=MAX_BATCH_CHARS, coverage=None):
+    async def _request(self, stage, messages, validate, retries, deadline, remaining_calls, *, json_reply=True, limit=MAX_BATCH_CHARS, coverage=None, recoverable=False, diagnostic=None):
         original = messages
         attempt = 0
+        partial_records = {}
         while True:
             remaining = deadline - time.monotonic() - DELIVERY_RESERVE_S
             available = remaining - self._future_reserve(stage)
@@ -252,8 +371,12 @@ class SurveyHandler:
                 if coverage is not None and coverage.get("candidate"):
                     self._log_coverage_fallback(coverage, attempt, "budget")
                     return coverage["candidate"].markdown
+                if recoverable:
+                    raise StageBudgetError(stage, "budget", partial_records.values())
                 raise TimeoutError(f"C 类{stage}预算不足，需减少本轮工作量，停止新增模型请求")
             if len(_dump(messages)) > limit:
+                if recoverable:
+                    raise StageBudgetError(stage, "input_too_large", partial_records.values())
                 if coverage is not None and coverage.get("candidate"):
                     self._log_coverage_fallback(coverage, attempt, "input_too_large")
                     return coverage["candidate"].markdown
@@ -269,11 +392,34 @@ class SurveyHandler:
                 "event": "request_start", "stage": stage, "attempt": attempt,
                 "remaining_calls": remaining_calls, "input_chars": len(_dump(messages)),
                 "remaining_s": round(remaining, 3), "timeout_s": round(timeout, 3),
+                **(diagnostic or {}),
             }))
             try:
                 text = await self.llm.complete(messages, temperature=0.2, max_retries=0, timeout_s=timeout)
+                if json_reply:
+                    try:
+                        parsed = parse_json_object(text)
+                    except ValueError:
+                        raise ModelStructureError("模型JSON格式无效") from None
+                else:
+                    parsed = text
                 validating = True
-                result = validate(parse_json_object(text) if json_reply else text)
+                result = validate(parsed)
+                if isinstance(result, list):
+                    ignored = [path for record in result if isinstance(record, dict)
+                               for path in record.pop("_field_paths", [])]
+                    if ignored:
+                        logger.warning("C 类字段忽略 %s", _dump({"event": "field_ignored",
+                                      "case_id": (diagnostic or {}).get("case_id"),
+                                      "batch": (diagnostic or {}).get("batch"),
+                                      "paper_ids": (diagnostic or {}).get("paper_ids"),
+                                      "field_paths": ignored}))
+                if recoverable and isinstance(result, list) and partial_records:
+                    for record in result:
+                        if isinstance(record, dict) and type(record.get("paper_id")) is int:
+                            paper_id = record["paper_id"]
+                            partial_records[paper_id] = _merge_partial_record(partial_records.get(paper_id), record)
+                    result = list(partial_records.values())
                 failure = None
                 return result
             except CitationCoverageError as error:
@@ -284,6 +430,19 @@ class SurveyHandler:
                     coverage["candidate"] = error
                 failure = "citation_coverage"
                 issue = str(error)
+            except ModelStructureError as error:
+                logger.warning("C 类结构校验 %s", _dump({"event": "record_validation",
+                              "case_id": (diagnostic or {}).get("case_id"),
+                              "batch": (diagnostic or {}).get("batch"),
+                              "paper_ids": (diagnostic or {}).get("paper_ids"),
+                              "field_paths": error.field_paths, "accepted": len(error.partial_records),
+                              "rejected": len(error.field_paths)}))
+                for record in error.partial_records:
+                    if isinstance(record, dict) and type(record.get("paper_id")) is int:
+                        paper_id = record["paper_id"]
+                        partial_records[paper_id] = _merge_partial_record(partial_records.get(paper_id), record)
+                failure = "format"
+                issue = str(error)
             except LLMTruncatedError:
                 failure = "truncated"
                 issue = "回复被截断，请精简并重新输出完整结果，不续写旧回复"
@@ -293,7 +452,7 @@ class SurveyHandler:
                     raise
                 issue = str(error)
             except (ValueError, KeyError, TypeError) as error:
-                if coverage is not None and (not validating or isinstance(error, (KeyError, TypeError))):
+                if recoverable or (coverage is not None and (not validating or isinstance(error, (KeyError, TypeError)))):
                     raise
                 failure = "format"
                 issue = str(error)
@@ -306,11 +465,16 @@ class SurveyHandler:
                     "elapsed_s": round(elapsed, 3),
                     "output_chars": len(text) if isinstance(text, str) else 0,
                     "failure": failure,
+                    **(diagnostic or {}),
                 }))
             if retries["remaining"] == 0:
                 if coverage is not None and coverage.get("candidate"):
                     self._log_coverage_fallback(coverage, attempt, failure)
                     return coverage["candidate"].markdown
+                if recoverable:
+                    if failure == "budget":
+                        raise StageBudgetError(stage, "budget", partial_records.values()) from None
+                    raise StageFailure(stage, failure or "format", partial_records.values()) from None
                 raise ValueError(f"C 类{stage}失败，阶段重试已用尽：{issue}") from None
             retries["remaining"] -= 1
             if failure == "request":
@@ -336,7 +500,7 @@ class SurveyHandler:
 
     def _check_time(self, deadline):
         if time.monotonic() >= deadline - DELIVERY_RESERVE_S:
-            raise TimeoutError("C 类任务剩余预算不足，停止新增材料读取")
+            raise StageBudgetError("C 类任务", "budget")
 
     def _log_coverage_fallback(self, coverage, attempt, reason):
         candidate = coverage["candidate"]
@@ -415,10 +579,18 @@ class SurveyHandler:
         batches = self._batches(units, builder)
         merged = {}
         for index, batch in enumerate(batches):
-            records = await self._request(
-                "论文概览", builder(batch), lambda data: _check_overview(data, batch, outline),
-                retries, deadline, len(batches) - index,
-            )
+            try:
+                records = await self._request(
+                    "论文概览", builder(batch), lambda data: _check_overview(data, batch, outline),
+                    retries, deadline, len(batches) - index, recoverable=True,
+                    diagnostic={"case_id": question["case_id"], "batch": index + 1,
+                                "paper_ids": [paper["paper_id"] for paper in batch]},
+                )
+            except StageFailure as failure:
+                records = failure.partial_records
+                logger.warning("C 类阶段恢复 %s", _dump({"event": "stage_recovery", "stage": "overview",
+                              "case_id": question["case_id"], "batch": index + 1,
+                              "record_count": len(records), "reason": failure.reason}))
             for record in records:
                 item = merged.setdefault(record["paper_id"], {
                     "paper_id": record["paper_id"], "research_focus": [],
@@ -434,7 +606,7 @@ class SurveyHandler:
                         item["reading_questions"].append(dict(task))
                     else:
                         same["keywords"] = _unique_words(same["keywords"] + task["keywords"])
-                if record["research_focus"] not in item["research_focus"]:
+                if record.get("research_focus") and record["research_focus"] not in item["research_focus"]:
                     item["research_focus"].append(record["research_focus"])
         return list(merged.values())
 
@@ -537,7 +709,7 @@ class SurveyHandler:
                 return batches, builder
             reducible = [paper for paper in prepared if len(paper["pages"]) > 1]
             if not reducible:
-                raise TimeoutError("C 类材料整理预算不足，保留每篇核心页面后仍无法完成当前工作量")
+                raise StageBudgetError("材料整理", "budget")
             paper = max(reducible, key=lambda item: sum(len(page["text"]) for page in item["pages"]))
             removed = paper["page_priority"].pop()
             paper["pages"] = [page for page in paper["pages"] if page["page"] != removed]
@@ -545,11 +717,38 @@ class SurveyHandler:
 
     async def _notes(self, question, outline, readings, notes, retries, deadline):
         batches, builder = self._fit_note_batches(question, outline, readings, retries, deadline)
+        added = False
         for index, batch in enumerate(batches):
-            records = await self._request(
-                "材料整理", builder(batch), lambda data: _check_notes(data, batch, outline),
-                retries, deadline, len(batches) - index,
-            )
+            try:
+                records = await self._request(
+                    "材料整理", builder(batch), lambda data: _check_notes(data, batch, outline),
+                    retries, deadline, len(batches) - index, recoverable=True,
+                    diagnostic={"case_id": question["case_id"], "batch": index + 1,
+                                "paper_ids": [paper["paper_id"] for paper in batch]},
+                )
+            except StageFailure as failure:
+                self._merge_note_records(notes, failure.partial_records)
+                batch_pages = {paper["paper_id"]: paper.get("pages", []) for paper in batch}
+                for record in failure.partial_records:
+                    item = notes.get(record.get("paper_id"), {})
+                    for page in batch_pages.get(record.get("paper_id"), []):
+                        if page.get("page") not in item.get("source_pages", []):
+                            item.setdefault("source_pages", []).append(page["page"])
+                accepted_ids = {record.get("paper_id") for record in failure.partial_records}
+                for paper in batch:
+                    if paper["paper_id"] not in accepted_ids:
+                        item = notes.setdefault(paper["paper_id"], {"paper_id": paper["paper_id"],
+                            "research_focus": [], "methods": [], "conditions": [], "findings": [],
+                            "limitations": [], "gaps": [], "source_pages": []})
+                    else:
+                        item = notes[paper["paper_id"]]
+                    gap = "材料整理阶段未完成；本篇已读取原文仍可用于写作核验。"
+                    if gap not in item["gaps"]:
+                        item["gaps"].append(gap)
+                logger.warning("C 类阶段恢复 %s", _dump({"event": "stage_recovery", "stage": "notes",
+                              "case_id": question["case_id"], "batch": index + 1,
+                              "record_count": len(failure.partial_records), "reason": failure.reason}))
+                return added or bool(failure.partial_records)
             by_id = {paper["paper_id"]: paper for paper in batch}
             for record in records:
                 # TODO：模型提炼的事实与分析尚未做语义核验，不能标记为已验证事实。
@@ -557,12 +756,13 @@ class SurveyHandler:
                     "paper_id": record["paper_id"], "research_focus": [], "methods": [], "conditions": [],
                     "findings": [], "limitations": [], "gaps": [], "source_pages": [],
                 })
-                if record["research_focus"] not in item["research_focus"]:
+                if record["research_focus"] and record["research_focus"] not in item["research_focus"]:
                     item["research_focus"].append(record["research_focus"])
                 for name in ("methods", "conditions", "findings", "limitations", "gaps"):
                     for value in record[name]:
                         if value not in item[name]:
                             item[name].append(value)
+                added = True
                 for page in by_id[record["paper_id"]]["pages"]:
                     if page["page"] not in item["source_pages"]:
                         item["source_pages"].append(page["page"])
@@ -571,6 +771,29 @@ class SurveyHandler:
                     gap = "本轮因时间预算延后页面：" + "、".join(str(page) for page in deferred)
                     if gap not in item["gaps"]:
                         item["gaps"].append(gap)
+        return added
+
+    def _merge_note_records(self, notes, records):
+        for record in records:
+            paper_id = record.get("paper_id")
+            if type(paper_id) is not int:
+                continue
+            item = notes.setdefault(paper_id, {"paper_id": paper_id, "research_focus": [], "methods": [],
+                "conditions": [], "findings": [], "limitations": [], "gaps": [], "source_pages": []})
+            focus = record.get("research_focus")
+            if focus and focus not in item["research_focus"]:
+                item["research_focus"].append(focus)
+            for name in ("methods", "conditions", "findings", "limitations", "gaps"):
+                for value in record.get(name, []):
+                    if value not in item[name]:
+                        item[name].append(value)
+
+    def _has_writing_evidence(self, notes):
+        for note in notes.values():
+            for name in ("research_focus", "methods", "conditions", "findings", "limitations"):
+                if any(bool(value) for value in note.get(name, [])):
+                    return True
+        return False
 
     async def _compare(self, question, outline, sources, notes, retries, deadline, supplement_allowed):
         context = {"outline": outline, "notes": list(notes.values()), "supplement_allowed": supplement_allowed}
@@ -578,7 +801,8 @@ class SurveyHandler:
         if len(_dump(messages)) + REPAIR_FEEDBACK_CHARS <= MAX_GLOBAL_CHARS:
             return await self._request(
                 "跨论文比较", messages, lambda data: _check_comparison(data, sources, supplement_allowed),
-                retries, deadline, 1, limit=MAX_GLOBAL_CHARS,
+                retries, deadline, 1, limit=MAX_GLOBAL_CHARS, recoverable=True,
+                diagnostic={"case_id": question["case_id"], "batch": 1, "paper_ids": sorted(notes)},
             )
         # 全局材料较多时按章节比较，每节仍同时考虑所有论文，不拼接各批论文排名。
         combined = {"sections": [], "supplement_tasks": []}
@@ -589,15 +813,30 @@ class SurveyHandler:
                 chapter_notes.append({**note, "findings": findings})
             messages = build_messages(COMPARISON_PROMPT, question,
                 outline={**outline, "sections": [section]}, notes=chapter_notes, supplement_allowed=supplement_allowed)
-            result = await self._request(
-                "跨论文比较", messages, lambda data: _check_comparison(data, sources, supplement_allowed),
-                retries, deadline, len(outline["sections"]) - index, limit=MAX_GLOBAL_CHARS,
-            )
+            try:
+                result = await self._request(
+                    "跨论文比较", messages, lambda data: _check_comparison(data, sources, supplement_allowed),
+                    retries, deadline, len(outline["sections"]) - index, limit=MAX_GLOBAL_CHARS, recoverable=True,
+                    diagnostic={"case_id": question["case_id"], "batch": index + 1, "paper_ids": sorted(notes)},
+                )
+            except StageFailure as failure:
+                logger.warning("C 类阶段恢复 %s", _dump({"event": "stage_recovery",
+                              "stage": "comparison", "batch": index + 1, "record_count": len(combined["sections"]),
+                              "reason": failure.reason}))
+                combined["sections"].extend({"title": pending["title"], "points": [],
+                                              "gaps": ["本节跨论文比较未完成"]}
+                                             for pending in outline["sections"][index:])
+                return combined
             combined["sections"].extend(result["sections"])
             for task in result["supplement_tasks"]:
                 if task not in combined["supplement_tasks"]:
                     combined["supplement_tasks"].append(task)
         return combined
+
+    def _outline_comparison(self, outline):
+        return {"sections": [{"title": section["title"], "points": [],
+                              "gaps": ["本阶段未能形成可核验的跨论文比较"]}
+                             for section in outline["sections"]], "supplement_tasks": []}
 
     def _writing_messages(self, question, outline, comparison, sources, notes, readings):
         # 保留全部论文的结构化记录；原文按剩余空间逐页附加，不重复塞入全部 PDF。
@@ -720,14 +959,38 @@ class SurveyHandler:
         overview = await self._overview(question, outline, summaries, retries["overview"], deadline)
         overview_by_id = {paper["paper_id"]: paper for paper in overview}
         for paper in sources:
-            paper["known_information"] = overview_by_id[paper["paper_id"]]["known_information"]
-        tasks = [{**query, "paper_id": paper["paper_id"]} for paper in overview for query in paper["reading_questions"]]
+            paper["known_information"] = overview_by_id.get(paper["paper_id"], {}).get("known_information", [])
+        tasks = [{**query, "paper_id": paper["paper_id"]} for paper in sources
+                 for query in overview_by_id.get(paper["paper_id"], {}).get("reading_questions", [])]
+        for paper in sources:
+            overview_record = overview_by_id.get(paper["paper_id"])
+            if overview_record is None or (not overview_record.get("known_information")
+                                           and not overview_record.get("reading_questions")):
+                tasks.extend({**query, "paper_id": paper["paper_id"]}
+                             for query in outline["reading_questions"])
         readings = self._read_tasks(tools, sources, tasks, deadline)
 
         # 五、逐篇材料整理；六、跨论文比较，并最多集中补读一轮。
         notes = {}
-        await self._notes(question, outline, readings, notes, retries["notes"], deadline)
-        comparison = await self._compare(question, outline, sources, notes, retries["comparison"], deadline, True)
+        try:
+            await self._notes(question, outline, readings, notes, retries["notes"], deadline)
+        except StageFailure as failure:
+            self._merge_note_records(notes, failure.partial_records)
+            logger.warning("C 类阶段恢复 %s", _dump({"event": "stage_recovery", "stage": "notes",
+                          "case_id": question["case_id"], "record_count": len(failure.partial_records),
+                          "reason": failure.reason}))
+        has_notes = self._has_writing_evidence(notes)
+        has_pages = any(page.get("text", "").strip() for reading in readings for page in reading.get("pages", []))
+        if not has_notes and not has_pages:
+            raise StageFailure("材料整理", "no_evidence")
+        comparison = self._outline_comparison(outline)
+        if has_notes:
+            try:
+                comparison = await self._compare(question, outline, sources, notes, retries["comparison"], deadline, True)
+            except StageFailure as failure:
+                logger.warning("C 类阶段恢复 %s", _dump({"event": "stage_recovery", "stage": "comparison",
+                              "case_id": question["case_id"], "record_count": len(notes),
+                              "reason": failure.reason}))
         for _ in range(MAX_SUPPLEMENT_ROUNDS):
             if not comparison["supplement_tasks"]:
                 break
@@ -739,13 +1002,33 @@ class SurveyHandler:
                 break
             # 提取过但被预算延后的页仍允许重新进入材料整理。
             already_read = {paper_id: set(note["source_pages"]) for paper_id, note in notes.items()}
-            extra = self._read_tasks(tools, sources, comparison["supplement_tasks"], deadline, already_read)
+            try:
+                extra = self._read_tasks(tools, sources, comparison["supplement_tasks"], deadline, already_read)
+            except StageBudgetError:
+                logger.warning("C 类阶段恢复 %s", _dump({"event": "stage_recovery", "stage": "supplement_read",
+                              "case_id": question["case_id"], "record_count": len(comparison["sections"]),
+                              "reason": "budget"}))
+                break
             if not extra:
                 logger.info("C 类补读 %s", _dump({"event": "supplement_no_new_evidence"}))
                 break
-            await self._notes(question, outline, extra, notes, retries["notes"], deadline)
+            notes_added = False
+            try:
+                notes_added = await self._notes(question, outline, extra, notes, retries["notes"], deadline)
+            except StageFailure as failure:
+                self._merge_note_records(notes, failure.partial_records)
+                logger.warning("C 类阶段恢复 %s", _dump({"event": "stage_recovery", "stage": "supplement_notes",
+                              "case_id": question["case_id"], "record_count": len(failure.partial_records),
+                              "reason": failure.reason}))
             readings.extend(extra)
-            comparison = await self._compare(question, outline, sources, notes, retries["comparison"], deadline, False)
+            if not notes_added:
+                break
+            try:
+                comparison = await self._compare(question, outline, sources, notes, retries["comparison"], deadline, False)
+            except StageFailure as failure:
+                logger.warning("C 类阶段恢复 %s", _dump({"event": "stage_recovery", "stage": "supplement_comparison",
+                              "case_id": question["case_id"], "record_count": len(comparison["sections"]),
+                              "reason": failure.reason}))
 
         # 七、写作后规范引用并校验，书目与答卷路径由程序组装。
         for paper in sources:
@@ -759,6 +1042,9 @@ class SurveyHandler:
                       "notes": notes, "comparison": comparison,
                       "requirements": outline["requirements"]},
         )
+
+        logger.info("C 类答卷 %s", _dump({"event": "answer_ready", "case_id": question["case_id"],
+                     "markdown_chars": len(markdown)}))
 
         # 八、交由 Agent 的公共交付组件原子写入及回读，再返回 HTTP 答卷。
         return {

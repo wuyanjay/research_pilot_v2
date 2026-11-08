@@ -75,6 +75,20 @@ class IdeaHandler:
         accepted: bool,
     ) -> None:
         """把被拒绝的草稿留在本队工作区，绝不当成正式答卷。"""
+        if issues:
+            logger.warning(
+                "E %s attempt=%s rejected: %s",
+                question["case_id"],
+                attempt,
+                "；".join(issues)[:1500],
+            )
+        elif warnings:
+            logger.info(
+                "E %s attempt=%s warnings: %s",
+                question["case_id"],
+                attempt,
+                "；".join(warnings)[:1500],
+            )
         try:
             directory = self.work_directory / question["case_id"] / "idea"
             directory.mkdir(parents=True, exist_ok=True)
@@ -148,6 +162,11 @@ class IdeaHandler:
         base_messages = build_messages(question, digests)
         messages = base_messages
         last_error = "没有生成合规报告"
+        # 内容检查可能误判；保留一份格式和篇幅都合法的最佳稿，避免整题 500。
+        best_markdown = None
+        best_attempt = None
+        best_reason = ""
+        best_warnings = []
 
         for attempt in range(1, MAX_ATTEMPTS + 1):
             remaining = deadline - time.monotonic() - DELIVERY_RESERVE_S
@@ -159,6 +178,7 @@ class IdeaHandler:
                 remaining,
             )
             text = None
+            attempt_warnings = []
             try:
                 text = await self.llm.complete(
                     messages,
@@ -172,14 +192,26 @@ class IdeaHandler:
                 if len(body.strip()) < MIN_IDEA_BODY_CHARS:
                     raise ValueError(f"正文至少需要 {MIN_IDEA_BODY_CHARS} 个字符")
                 review = review_idea_body(body, question, digests)
-                if review.errors:
-                    raise ValueError("；".join(review.errors))
-                markdown = format_idea(body, digests, min_citations=minimum)
+                citation_warnings = []
+                markdown = format_idea(
+                    body,
+                    digests,
+                    min_citations=minimum,
+                    allow_unsupported_pages=True,
+                    warnings=citation_warnings,
+                )
+                attempt_warnings = review.warnings + citation_warnings
                 issues = body_limit_issues(markdown)
                 if issues:
                     raise ValueError("；".join(issues))
+                if review.errors:
+                    best_markdown = markdown
+                    best_attempt = attempt
+                    best_reason = "；".join(review.errors)
+                    best_warnings = attempt_warnings
+                    raise ValueError(best_reason)
                 self._record_attempt(
-                    question, attempt, text, body, [], review.warnings, True
+                    question, attempt, text, body, [], attempt_warnings, True
                 )
                 return {
                     "case_id": question["case_id"],
@@ -201,7 +233,13 @@ class IdeaHandler:
             except (ValueError, KeyError, TypeError, UnicodeEncodeError) as exc:
                 last_error = str(exc)
                 self._record_attempt(
-                    question, attempt, text, None, [last_error], [], False
+                    question,
+                    attempt,
+                    text,
+                    None,
+                    [last_error],
+                    attempt_warnings,
+                    False,
                 )
 
             if attempt >= MAX_ATTEMPTS:
@@ -214,4 +252,19 @@ class IdeaHandler:
                 messages.append({"role": "assistant", "content": text[:4_000]})
             messages.append({"role": "user", "content": self._feedback(last_error)})
 
-        raise ValueError(f"E 类报告生成失败：{last_error}")
+        if best_markdown is not None:
+            logger.warning(
+                "E %s 使用第 %s 次最佳稿返回；内容问题：%s；警告：%s",
+                question["case_id"],
+                best_attempt,
+                best_reason[:1000],
+                "；".join(best_warnings)[:1000],
+            )
+            return {
+                "case_id": question["case_id"],
+                "path": self._path(question["case_id"]),
+                "markdown": best_markdown,
+            }
+        raise ValueError(
+            f"E 类 {question['case_id']} 报告生成失败：{last_error}"
+        )

@@ -15,6 +15,7 @@ REFERENCE_HEADING_RE = re.compile(
 )
 
 _FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
+_HEADING_START_RE = re.compile(r"(?m)^ {0,3}#{1,6}\s")
 _INLINE_CODE_RE = re.compile(r"(?<!`)(`+)(?!`)(.*?)\1(?!`)", re.DOTALL)
 _MATH_RE = re.compile(
     r"(?<!\\)\$\$[\s\S]*?(?<!\\)\$\$|"
@@ -83,10 +84,15 @@ def _unwrap_fence(text: str) -> str | None:
     )
     if end is None:
         raise ValueError("报告包装的 Markdown 代码围栏未完整闭合，请重新生成完整正文")
-    if end != len(lines) - 1:
-        # 开头是正文中的代码示例，后面还有报告内容，不能当成外层包装。
-        return None
-    return "\n".join(lines[1:end]).strip()
+    fenced = "\n".join(lines[1:end]).strip()
+    trailing = "\n".join(lines[end + 1:]).strip()
+    if not trailing:
+        return fenced
+    # 围栏内容是带标题的报告、后面只是一句说明时，仍然解开围栏；
+    # 如果围栏只是正文中的代码示例、后面还有报告标题，则保持原样。
+    if _HEADING_START_RE.search(fenced) and not _HEADING_START_RE.search(trailing):
+        return fenced
+    return None
 
 
 def clean_markdown(text: str) -> str:

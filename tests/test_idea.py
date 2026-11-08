@@ -63,6 +63,28 @@ class IdeaFormatTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "未完整闭合"):
             clean_markdown("```markdown\n# 标题")
 
+    def test_clean_markdown_unwraps_fence_with_trailing_note(self):
+        text = "```markdown\n# 报告\n\n## 研究问题\n\n正文 [1]\n```\n以上是完整报告。"
+        self.assertEqual(clean_markdown(text), "# 报告\n\n## 研究问题\n\n正文 [1]")
+
+    def test_clean_markdown_does_not_unwrap_leading_code_sample(self):
+        text = "```python\nprint(1)\n```\n# 报告\n\n## 研究问题\n\n正文 [1]"
+        self.assertEqual(clean_markdown(text), text)
+
+    def test_unsupported_page_can_be_downgraded_for_e(self):
+        warnings = []
+        markdown = format_idea(
+            "# 报告\n\n引用 [1, p. 9]。\n",
+            [digest()],
+            allow_unsupported_pages=True,
+            warnings=warnings,
+        )
+        self.assertIn("[1]", markdown)
+        self.assertNotIn("[1, p. 9]", markdown)
+        self.assertTrue(any("已降级" in warning for warning in warnings))
+        with self.assertRaisesRegex(ValueError, "页码"):
+            format_idea("# 报告\n\n引用 [1, p. 9]。\n", [digest()])
+
 
 class IdeaReviewTests(unittest.TestCase):
     def test_minimum_citations_honour_explicit_task_quota(self):
@@ -80,6 +102,14 @@ class IdeaReviewTests(unittest.TestCase):
         body = "# 报告\n\n## 研究问题与问题边界\n\n论文实测表明该模拟观察就是论文结论。\n"
         review = review_idea_body(body, question(text), [digest()])
         self.assertTrue(any("不得将题目模拟观察" in error for error in review.errors))
+
+    def test_completed_design_is_not_a_completed_experiment(self):
+        body = "# 报告\n\n## 研究问题与问题边界\n\n本研究已经完成实验设计，下一步将开展实验。\n"
+        review = review_idea_body(body, question(), [digest()])
+        self.assertEqual(review.errors, [])
+        body = "# 报告\n\n## 研究问题与问题边界\n\n本研究已经完成实验。\n"
+        review = review_idea_body(body, question(), [digest()])
+        self.assertTrue(any("不得写成已完成实验" in error for error in review.errors))
 
     def test_missing_content_is_warning_not_hard_error(self):
         body = "# 报告\n\n## 研究问题与问题边界\n\n我们研究城市步行热暴露问题。\n"
@@ -195,6 +225,28 @@ class IdeaHandlerTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Urban Heat Paper，urban.pdf", result["markdown"])
         self.assertEqual(len(llm.calls), 1)
 
+    def test_handler_returns_best_effort_when_content_check_keeps_failing(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        work = Path(temporary.name) / "work"
+        bad = REPORT.replace(
+            "已有研究使用城市气候观测和步行规划方法分析热暴露。",
+            "本研究表明所提方案已经取得显著改进。",
+        )
+        llm = FakeLLM(bad)
+        with patch("src.handlers.idea.PDFTools", FakePDFTools):
+            handler = IdeaHandler(
+                llm,
+                papers_directory=Path(temporary.name) / "papers",
+                work_directory=work,
+                team="测试队伍",
+            )
+            result = asyncio.run(handler.handle(question()))
+        self.assertEqual(len(llm.calls), 3)
+        self.assertIn("## 参考文献", result["markdown"])
+        self.assertEqual(result["path"], "data/expert/E-99-灵感Idea报告-测试队伍.md")
+        self.assertTrue(list((work / "E-99" / "idea").glob("attempt-*.json")))
+
     def test_handler_retries_invalid_report_until_attempts_exhausted(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
@@ -207,7 +259,7 @@ class IdeaHandlerTests(unittest.IsolatedAsyncioTestCase):
                 work_directory=work,
                 team="测试队伍",
             )
-            with self.assertRaisesRegex(ValueError, "E 类报告生成失败"):
+            with self.assertRaisesRegex(ValueError, "报告生成失败"):
                 asyncio.run(handler.handle(question()))
         self.assertEqual(len(llm.calls), 3)
         self.assertTrue(list((work / "E-99" / "idea").glob("attempt-*.json")))

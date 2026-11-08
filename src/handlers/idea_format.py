@@ -221,12 +221,19 @@ def format_idea(
     *,
     min_citations: int = 1,
     require_pages: bool = False,
+    allow_unsupported_pages: bool = False,
+    warnings: list[str] | None = None,
 ) -> str:
-    """规范化正文引用并重建参考文献；不补造论文或页码。"""
+    """规范化正文引用并重建参考文献；不补造论文或页码。
+
+    E 类页码不是强制项：allow_unsupported_pages=True 时，页码没有被
+    实际摘录支持就降级为只保留论文编号，避免整份报告因可选页码失败。
+    """
     body = strip_references(markdown).strip()
     visible = _prose_mask(body)
     numbered: dict[int, int] = {}
     replacements: list[tuple[int, int, str]] = []
+    notes = warnings if warnings is not None else []
 
     for match in _BRACKET.finditer(visible):
         token = next(group for group in match.groups() if group is not None)
@@ -265,10 +272,21 @@ def format_idea(
                         excerpt.text, filename=digest.filename, title=digest.title
                     )
                 }
-                if start < 1 or end < start or end - start >= len(available):
-                    raise IdeaFormatError("引用页码范围没有指定论文摘录支持")
-                pages = list(range(start, end + 1))
-                if not set(pages) <= available:
+                # 页码区间过长时直接视为不支持，避免对模型输出做大范围展开。
+                too_large = start < 1 or end < start or end - start + 1 > len(available)
+                pages = [] if too_large else list(range(start, end + 1))
+                unsupported = too_large or not set(pages) <= available
+                if unsupported:
+                    if allow_unsupported_pages and not require_pages:
+                        notes.append(
+                            f"论文 {original} 的引用页码 {start}-{end} 未在摘录中，"
+                            f"已降级为 [{original}]"
+                        )
+                        numbered.setdefault(original, original)
+                        output.append(f"[{original}]")
+                        continue
+                    if too_large:
+                        raise IdeaFormatError("引用页码范围没有指定论文摘录支持")
                     raise IdeaFormatError(f"论文 {original} 的引用页码未出现在提供的摘录中")
                 number = numbered.setdefault(original, original)
                 output.extend(f"[{number}, p. {page}]" for page in pages)

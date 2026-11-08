@@ -24,7 +24,7 @@ import pymupdf
 from src.agent import ResearchPilotAgent
 from src.handlers.survey import (
     SurveyHandler, assemble_markdown, MAX_BATCH_CHARS, REPAIR_FEEDBACK_CHARS,
-    _check_outline, _check_overview,
+    ModelStructureError, StageFailure, _check_outline, _check_overview, _check_notes,
 )
 from src.handlers.survey_prompts import OVERVIEW_PROMPT, build_messages
 from src.llm.client import LLMError, LLMTruncatedError
@@ -239,8 +239,41 @@ class SurveyTests(unittest.IsolatedAsyncioTestCase):
         frame = _check_outline(outline())
         response = overview([1])
         response["papers"][0]["reading_questions"][0]["question_id"] = "Q999"
-        with self.assertRaisesRegex(ValueError, "问题编号"):
+        with self.assertRaises(ModelStructureError) as raised:
             _check_overview(response, [{"paper_id": 1}], frame)
+        self.assertEqual(raised.exception.partial_records[0]["reading_questions"], [])
+
+    def test_overview_keeps_unique_valid_records_and_does_not_guess_unknown_or_duplicate_ids(self):
+        frame = _check_outline(outline())
+        response = overview([1, 1, 2, 99])
+        response["papers"][1]["research_focus"] = "重复编号不能按位置猜论文"
+        with self.assertRaises(ModelStructureError) as raised:
+            _check_overview(response, [{"paper_id": n} for n in range(1, 6)], frame)
+        records = raised.exception.partial_records
+        self.assertEqual([record["paper_id"] for record in records], [2])
+
+    def test_notes_preserve_valid_findings_and_do_not_relabel_invalid_kind(self):
+        frame = _check_outline(outline())
+        response = notes([1, 2])
+        response["papers"][0]["findings"].append({
+            "statement": "有效结果保留", "kind": "reported_result", "section_ids": [13],
+        })
+        response["papers"][0]["findings"].append({
+            "statement": "类型错误不得升级为结果", "kind": "unknown_kind", "section_ids": [1],
+        })
+        response["papers"][1]["research_focus"] = ""
+        with self.assertLogs("src.handlers.survey", level="WARNING") as captured:
+            with self.assertRaises(ModelStructureError) as raised:
+                _check_notes(response, [{"paper_id": n} for n in range(1, 6)], frame)
+        records = raised.exception.partial_records
+        self.assertEqual([record["paper_id"] for record in records], [1, 2])
+        findings = records[0]["findings"]
+        self.assertEqual([item["statement"] for item in findings], ["在给定条件下报告资源消耗结果", "有效结果保留"])
+        self.assertEqual(findings[-1]["kind"], "reported_result")
+        self.assertEqual(findings[-1]["section_ids"], [])
+        diagnostic = "\n".join(captured.output)
+        self.assertIn("field_paths", diagnostic)
+        self.assertNotIn("有效结果保留", diagnostic)
 
     async def test_known_summary_information_does_not_drop_designated_papers(self):
         initial = overview(range(1, 6))
@@ -362,18 +395,113 @@ class SurveyTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn(self.names[-1], result["markdown"])
 
     async def test_overview_batches_share_one_retry(self):
-        handler = self.handler([outline(), {"papers": []}, overview([1, 2]), {"papers": []}])
-        with patch("src.handlers.survey.MAX_BATCH_PAPERS", 2):
-            with self.assertRaisesRegex(ValueError, "论文概览.*重试已用尽"):
-                await handler.handle(self.question)
-        self.assertEqual(len(handler.llm.calls), 4)
+        handler = self.handler([
+            outline(), overview([1, 2, 3]), {"papers": []}, {"papers": []},
+            notes([1, 2, 3]), notes([4, 5]), comparison(), body(),
+        ])
+        with patch("src.handlers.survey.MAX_BATCH_PAPERS", 3):
+            result = await handler.handle(self.question)
+        self.assertTrue(result["markdown"])
+        self.assertEqual(len(handler.llm.calls), 8)
+        # 后一批失败只退化为程序提纲中的阅读任务，不能抹掉前一批成功结果。
+        overview_inputs = [
+            payload["papers"]
+            for payload in (self.input(handler, 1), self.input(handler, 2), self.input(handler, 3))
+            if "papers" in payload
+        ]
+        self.assertEqual([[item["paper_id"] for item in batch] for batch in overview_inputs], [[1, 2, 3], [4, 5], [4, 5]])
+        writing = self.input(handler, 7)
+        self.assertEqual({item["paper_id"] for item in writing["notes"]}, set(range(1, 6)))
+
+    async def test_partial_overview_repair_merges_valid_records_from_both_attempts(self):
+        initial = overview([1, 2, 3, 4, 5])
+        initial["papers"][0]["known_information"] = [
+            {"question_id": "Q2", "information": "第一轮有效信息A"},
+        ]
+        initial["papers"][1]["known_information"] = [
+            {"question_id": "Q999", "information": "无效字段触发修复"},
+        ]
+        repair = overview([2])
+        repair["papers"][0]["known_information"] = [
+            {"question_id": "Q1", "information": "修复轮有效信息B"},
+        ]
+        handler = self.handler([outline(), initial, repair, notes(range(1, 6)), comparison(), body()])
+        await handler.handle(self.question)
+        self.assertEqual(len(handler.llm.calls), 6)
+        # 原轮通过的论文1及修复轮返回的论文2信息均到达材料整理。
+        gathered = self.input(handler, 3)["papers"]
+        by_id = {paper["paper_id"]: paper for paper in gathered}
+        self.assertIn("第一轮有效信息A", json.dumps(by_id[1], ensure_ascii=False))
+        self.assertIn("修复轮有效信息B", json.dumps(by_id[2], ensure_ascii=False))
 
     async def test_supplement_does_not_reset_notes_retry(self):
         task = [{"paper_id": 1, "question": "补读附录", "keywords": ["Additional"]}]
-        handler = self.handler([outline(), overview(range(1, 6)), {"papers": []}, notes(range(1, 6)), comparison(task), {"papers": []}])
-        with self.assertRaisesRegex(ValueError, "材料整理.*重试已用尽"):
-            await handler.handle(self.question)
+        handler = self.handler([outline(), overview(range(1, 6)), {"papers": []}, notes(range(1, 6)),
+                                comparison(task), {"papers": []}, body()])
+        result = await handler.handle(self.question)
+        self.assertTrue(result["markdown"])
+        self.assertEqual(len(handler.llm.calls), 7)
+        # 补读整理失败后，初次有效比较仍用于写作。
+        self.assertEqual(self.input(handler, 6)["outline"][0]["title"], "跨论文方法与条件比较")
+
+    async def test_partial_notes_survive_exhaustion_while_other_papers_use_source_pages(self):
+        partial = notes([1])
+        handler = self.handler([
+            outline(), overview(range(1, 6)), partial, {"papers": []}, comparison(), body(),
+        ])
+        result = await handler.handle(self.question)
+        self.assertTrue(result["markdown"])
         self.assertEqual(len(handler.llm.calls), 6)
+        writing = self.input(handler, 5)
+        by_id = {record["paper_id"]: record for record in writing["notes"]}
+        self.assertIn("在给定条件下报告资源消耗结果", json.dumps(by_id[1], ensure_ascii=False))
+        self.assertTrue(all(not record["findings"] for number, record in by_id.items() if number != 1))
+        self.assertTrue({1, 2, 3, 4, 5}.issubset({page["paper_id"] for page in writing["pages"]}))
+
+    async def test_exhausted_notes_stage_still_writes_with_actual_read_pages(self):
+        handler = self.handler([
+            outline(), overview(range(1, 6)), {"papers": []}, {"papers": []}, comparison(), body(),
+        ])
+        result = await handler.handle(self.question)
+        self.assertTrue(result["markdown"])
+        self.assertEqual(len(handler.llm.calls), 6)
+        writing = self.input(handler, 5)
+        self.assertEqual({page["paper_id"] for page in writing["pages"]}, set(range(1, 6)))
+        self.assertTrue(all(page["text"].strip() for page in writing["pages"]))
+        self.assertTrue(all(not note["findings"] for note in writing["notes"]))
+
+    async def test_exhausted_notes_without_any_read_evidence_still_fails(self):
+        handler = self.handler([outline(), overview(range(1, 6)), {"papers": []}, {"papers": []}])
+        with patch.object(handler, "_read_tasks", return_value=[]):
+            with self.assertRaises(StageFailure):
+                await handler.handle(self.question)
+        self.assertEqual(len(handler.llm.calls), 2)
+
+    async def test_comparison_exhaustion_uses_outline_and_valid_notes_for_writing(self):
+        handler = self.handler([
+            outline(), overview(range(1, 6)), notes(range(1, 6)), {"sections": []}, {"sections": []}, body(),
+        ])
+        result = await handler.handle(self.question)
+        self.assertTrue(result["markdown"])
+        self.assertEqual(len(handler.llm.calls), 6)
+        writing = self.input(handler, 5)
+        self.assertEqual(len(writing["notes"]), 5)
+        self.assertEqual([section["title"] for section in writing["outline"]],
+                         [section["title"] for section in outline()["sections"]])
+        self.assertTrue(writing["pages"])
+
+    async def test_post_supplement_comparison_failure_keeps_previous_comparison(self):
+        task = [{"paper_id": 1, "question": "附录是否补充评价边界？", "keywords": ["Additional"]}]
+        previous = comparison(task)
+        previous["sections"][0]["title"] = "首次比较应保留"
+        handler = self.handler([
+            outline(), overview(range(1, 6)), notes(range(1, 6)), previous,
+            notes([1], extra=True), {"sections": []}, {"sections": []}, body(),
+        ])
+        result = await handler.handle(self.question)
+        self.assertTrue(result["markdown"])
+        self.assertEqual(len(handler.llm.calls), 8)
+        self.assertEqual(self.input(handler, 7)["outline"][0]["title"], "首次比较应保留")
 
     async def test_report_repair_feedback_addresses_length_and_preserves_original_input(self):
         handler = self.handler([outline(), overview(range(1, 6)), notes(range(1, 6)), comparison(), "# 太短\n[1]", body()])
@@ -538,28 +666,52 @@ class SurveyTests(unittest.IsolatedAsyncioTestCase):
             self.assertIs(raised.exception, error)
             self.assertEqual(len(handler.llm.calls), 1)
 
+    async def test_recoverable_stage_does_not_swallow_program_or_request_exceptions(self):
+        for error in (ValueError("bug"), TypeError("bug"), asyncio.CancelledError(),
+                      LLMError("认证错误", status_code=401)):
+            with self.subTest(error=type(error).__name__):
+                handler = self.handler([outline(), overview(range(1, 6)), error])
+                with self.assertRaises(type(error)) as raised:
+                    await handler.handle(self.question)
+                self.assertIs(raised.exception, error)
+                self.assertEqual(len(handler.llm.calls), 3)
+
+    async def test_pdf_io_timeout_does_not_become_a_successful_recovery(self):
+        for failure in (TimeoutError("PDF I/O timeout"), OSError("PDF I/O failure")):
+            with self.subTest(error=type(failure).__name__):
+                handler = self.handler([outline()])
+                with patch("src.handlers.survey.read_abstract", side_effect=failure):
+                    with self.assertRaises(type(failure)) as raised:
+                        await handler.handle(self.question)
+                self.assertIs(raised.exception, failure)
+                self.assertEqual(len(handler.llm.calls), 1)
+
     async def test_retryable_request_failure_shares_stage_repair_allowance(self):
         handler = self.handler([LLMError("请求超时", retryable=True), outline(), overview(range(1, 6)), notes(range(1, 6)), comparison(), body()])
         result = await handler.handle(self.question)
         self.assertTrue(result["markdown"])
         self.assertEqual(len(handler.llm.calls), 6)
 
-    async def test_pdf_page_numbers_in_section_ids_receive_specific_repair_feedback(self):
+    async def test_pdf_page_numbers_in_section_ids_are_cleared_without_dropping_finding(self):
         wrong = notes(range(1, 6))
         wrong["papers"][0]["findings"][0]["section_ids"] = [13, 17]
         handler = self.handler([
-            outline(), overview(range(1, 6)), wrong, notes(range(1, 6)), comparison(), body(),
+            outline(), overview(range(1, 6)), wrong, comparison(), body(),
         ])
-        result = await handler.handle(self.question)
+        with self.assertLogs("src.handlers.survey", level="INFO") as captured:
+            result = await handler.handle(self.question)
         self.assertTrue(result["markdown"])
         self.assertEqual(self.input(handler, 2)["valid_section_ids"], [1, 2])
-        feedback = handler.llm.calls[3][0][-1]["content"]
-        self.assertIn("提纲章节编号 [1, 2]", feedback)
-        self.assertIn("不能填写 PDF 页码", feedback)
-        self.assertEqual(len(handler.llm.calls), 6)
-        retry_messages = handler.llm.calls[1][0]
-        self.assertFalse(any(message["role"] == "assistant" for message in retry_messages))
-        self.assertNotIn("上一份结果不合规", "\n".join(message["content"] for message in retry_messages))
+        notes_input = self.input(handler, 4)
+        finding = notes_input["notes"][0]["findings"][0]
+        self.assertEqual(finding["statement"], wrong["papers"][0]["findings"][0]["statement"])
+        self.assertEqual(finding["kind"], "reported_result")
+        self.assertEqual(finding["section_ids"], [])
+        self.assertNotIn(wrong["papers"][0]["findings"][0]["statement"], "\n".join(captured.output))
+        self.assertIn("case_id", "\n".join(captured.output))
+        self.assertIn("field_paths", "\n".join(captured.output))
+        self.assertIn("section_ids", "\n".join(captured.output))
+        self.assertEqual(len(handler.llm.calls), 5)
 
     def reading_source(self):
         return {
@@ -698,11 +850,12 @@ class SurveyTests(unittest.IsolatedAsyncioTestCase):
             for number, name in enumerate(self.names, 1)
         ]
         original = deepcopy(readings)
-        with self.assertRaisesRegex(TimeoutError, "预算不足"):
+        with self.assertRaises(StageFailure) as raised:
             await handler._notes(
                 self.question, _check_outline(outline()), readings, {},
                 {"remaining": 1}, time.monotonic() + 300,
             )
+        self.assertEqual(raised.exception.reason, "budget")
         self.assertEqual(handler.llm.calls, [])
         self.assertEqual(readings, original)
 
@@ -943,7 +1096,8 @@ class SurveyHTTPTests(unittest.TestCase):
             dispatch = json.dumps({"team": "测试队", "case_ids": [item["case_id"] for item in entries], "cases": entries}, ensure_ascii=False).encode()
             (directory / "dispatch.json").write_bytes(dispatch)
             wrapped_overview = "```json\n" + json.dumps(overview(range(1, 6)), ensure_ascii=False) + "\n```"
-            replies = iter([outline(), wrapped_overview, notes(range(1, 6)), comparison(), body(["[1]", "[2]", "[3]", "[4]"]), body(["[1]", "[2]", "[3]", "[4]"])])
+            replies = iter([outline(), wrapped_overview, {"papers": []}, {"papers": []},
+                            body(["[1]", "[2]", "[3]", "[4]"]), body(["[1]", "[2]", "[3]", "[4]"])])
             requests = []
 
             def respond(request):
